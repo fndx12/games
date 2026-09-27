@@ -683,7 +683,6 @@ const STORAGE_KEY = "mibao-mental-math-v1";
 const SUPABASE_URL = "https://euvhugrohdejsjdehkze.supabase.co";
 const SUPABASE_KEY = "sb_publishable_IoILNvOG-OvT6HhWILSpGw_0TJh81ue";
 const SCORE_API = `${SUPABASE_URL}/rest/v1/scores`;
-const FAMILY_PLAYERS = ["爸爸", "婠婠", "米宝"];
 const currentPlayer = loadFamilyPlayer();
 const MODE_CONFIG = {
   "timed-60": { label: "1分钟挑战", duration: 60, timed: true, gameId: "math_challenge_1min" },
@@ -749,7 +748,7 @@ const onlineUi = {
   modeButtons: document.querySelectorAll("[data-leaderboard-mode]"), top: document.getElementById("topScores"), recent: document.getElementById("recentScores"), mine: document.getElementById("myScores"), myTitle: document.getElementById("myScoresTitle")
 };
 
-function loadFamilyPlayer() { try { const player=localStorage.getItem("familyPlayer"); return FAMILY_PLAYERS.includes(player)?player:FAMILY_PLAYERS[0]; } catch(error) { return FAMILY_PLAYERS[0]; } }
+function loadFamilyPlayer() { try { const player=localStorage.getItem("familyPlayer");const normalized=typeof player==="string"?player.trim():"";return normalized&&Array.from(normalized).length<=10?normalized:"爸爸"; } catch(error) { return "爸爸"; } }
 async function uploadOnlineScore() {
   const mode=state.game.mode;
   if(!mode.timed||!mode.gameId||state.scoreUploaded)return;

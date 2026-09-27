@@ -202,7 +202,6 @@
     const SUPABASE_KEY = "sb_publishable_IoILNvOG-OvT6HhWILSpGw_0TJh81ue";
     const SCORE_API = `${SUPABASE_URL}/rest/v1/scores`;
     const GAME_ID = "bunny_carrot_1min";
-    const FAMILY_PLAYERS = ["爸爸", "婠婠", "米宝"];
     const currentPlayer = loadFamilyPlayer();
 
     // 游戏区域大小
@@ -232,9 +231,10 @@
     function loadFamilyPlayer() {
       try {
         const player = localStorage.getItem("familyPlayer");
-        return FAMILY_PLAYERS.includes(player) ? player : FAMILY_PLAYERS[0];
+        const normalized = typeof player === "string" ? player.trim() : "";
+        return normalized && Array.from(normalized).length <= 10 ? normalized : "爸爸";
       } catch (error) {
-        return FAMILY_PLAYERS[0];
+        return "爸爸";
       }
     }
 

@@ -136,6 +136,41 @@
       cursor: pointer;
     }
 
+    .player-select-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 42px;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .manage-players-button,
+    .player-modal-close,
+    .add-player-button,
+    .delete-player-button {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #ffffff;
+      color: var(--ink);
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .manage-players-button {
+      width: 42px;
+      min-height: 42px;
+      color: var(--green);
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .manage-players-button:hover,
+    .manage-players-button:focus-visible {
+      border-color: rgba(47, 182, 109, 0.6);
+      background: #f0fbf5;
+      outline: none;
+    }
+
     .player-control select:focus-visible {
       outline: 3px solid rgba(47, 128, 237, 0.24);
       outline-offset: 2px;
@@ -335,6 +370,124 @@
       text-align: center;
     }
 
+    .player-modal {
+      position: fixed;
+      z-index: 50;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(23, 32, 51, 0.42);
+    }
+
+    .player-modal.is-visible {
+      display: flex;
+    }
+
+    .player-modal-panel {
+      width: min(480px, 100%);
+      max-height: min(680px, 90vh);
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--card);
+      box-shadow: 0 24px 64px rgba(23, 32, 51, 0.24);
+      padding: 22px;
+    }
+
+    .player-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .player-modal-header h2 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .player-modal-close {
+      flex: 0 0 auto;
+      width: 42px;
+      height: 42px;
+      font-size: 22px;
+    }
+
+    .add-player-form {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .add-player-form input {
+      min-width: 0;
+      min-height: 46px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 9px 12px;
+      color: var(--ink);
+      font: inherit;
+      font-size: 16px;
+    }
+
+    .add-player-button {
+      min-height: 46px;
+      padding: 9px 16px;
+      background: var(--ink);
+      color: #ffffff;
+    }
+
+    .player-form-message {
+      min-height: 21px;
+      margin: 8px 0 0;
+      color: #c23a3a;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .player-list {
+      display: grid;
+      gap: 9px;
+      margin-top: 10px;
+    }
+
+    .player-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      min-height: 54px;
+      padding: 9px 10px 9px 14px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fbfcfe;
+    }
+
+    .player-name {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      font-weight: 800;
+    }
+
+    .default-player-label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .delete-player-button {
+      min-height: 38px;
+      padding: 7px 11px;
+      color: #b42318;
+      border-color: rgba(180, 35, 24, 0.24);
+      background: #fff8f7;
+    }
+
     @media (max-width: 920px) {
       .featured-games {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -367,6 +520,14 @@
 
       .player-control {
         min-width: 0;
+      }
+
+      .add-player-form {
+        grid-template-columns: 1fr;
+      }
+
+      .add-player-button {
+        width: 100%;
       }
 
       .count span {
@@ -405,11 +566,10 @@
       <div class="hero-tools">
         <div class="player-control">
           <label for="familyPlayerSelect">当前玩家</label>
-          <select id="familyPlayerSelect">
-            <option value="爸爸">爸爸</option>
-            <option value="婠婠">婠婠</option>
-            <option value="米宝">米宝</option>
-          </select>
+          <div class="player-select-row">
+            <select id="familyPlayerSelect" aria-label="当前玩家"></select>
+            <button id="managePlayersButton" class="manage-players-button" type="button" aria-label="管理玩家" title="管理玩家">+</button>
+          </div>
         </div>
         <div class="count" aria-label="游戏数量">
           <strong id="gameCount">0</strong>
@@ -434,6 +594,21 @@
       <div id="otherGames" class="games other-games"></div>
     </section>
   </main>
+
+  <div id="playerModal" class="player-modal" role="dialog" aria-modal="true" aria-labelledby="playerModalTitle">
+    <div class="player-modal-panel">
+      <div class="player-modal-header">
+        <h2 id="playerModalTitle">管理玩家</h2>
+        <button id="playerModalClose" class="player-modal-close" type="button" aria-label="关闭玩家管理">×</button>
+      </div>
+      <form id="addPlayerForm" class="add-player-form" novalidate>
+        <input id="newPlayerName" type="text" maxlength="10" autocomplete="off" placeholder="输入玩家名字" aria-label="新玩家名字">
+        <button class="add-player-button" type="submit">新增玩家</button>
+      </form>
+      <p id="playerFormMessage" class="player-form-message" role="status" aria-live="polite"></p>
+      <div id="playerList" class="player-list" aria-label="玩家列表"></div>
+    </div>
+  </div>
 
   <script>
     const games = [
@@ -518,32 +693,182 @@
     const otherGamesEl = document.getElementById("otherGames");
     const gameCountEl = document.getElementById("gameCount");
     const familyPlayerSelect = document.getElementById("familyPlayerSelect");
+    const managePlayersButton = document.getElementById("managePlayersButton");
+    const playerModal = document.getElementById("playerModal");
+    const playerModalClose = document.getElementById("playerModalClose");
+    const addPlayerForm = document.getElementById("addPlayerForm");
+    const newPlayerName = document.getElementById("newPlayerName");
+    const playerFormMessage = document.getElementById("playerFormMessage");
+    const playerList = document.getElementById("playerList");
     const PLAYER_STORAGE_KEY = "familyPlayer";
-    const FAMILY_PLAYERS = ["爸爸", "婠婠", "米宝"];
+    const CUSTOM_PLAYERS_STORAGE_KEY = "familyCustomPlayers";
+    const DEFAULT_PLAYERS = ["爸爸", "米宝", "婠婠"];
     const SUPABASE_URL = "https://euvhugrohdejsjdehkze.supabase.co";
     const SUPABASE_KEY = "sb_publishable_IoILNvOG-OvT6HhWILSpGw_0TJh81ue";
     const SCORE_API = `${SUPABASE_URL}/rest/v1/scores`;
 
-    function loadFamilyPlayer() {
+    function normalizePlayerName(name) {
+      return typeof name === "string" ? name.trim() : "";
+    }
+
+    function loadCustomPlayers() {
       try {
-        const savedPlayer = localStorage.getItem(PLAYER_STORAGE_KEY);
-        return FAMILY_PLAYERS.includes(savedPlayer) ? savedPlayer : FAMILY_PLAYERS[0];
+        const parsed = JSON.parse(localStorage.getItem(CUSTOM_PLAYERS_STORAGE_KEY) || "[]");
+        if (!Array.isArray(parsed)) return [];
+        return parsed.reduce((players, name) => {
+          const normalized = normalizePlayerName(name);
+          if (
+            normalized &&
+            Array.from(normalized).length <= 10 &&
+            !DEFAULT_PLAYERS.includes(normalized) &&
+            !players.includes(normalized)
+          ) {
+            players.push(normalized);
+          }
+          return players;
+        }, []);
       } catch (error) {
-        return FAMILY_PLAYERS[0];
+        console.warn("无法读取自定义玩家", error);
+        return [];
       }
     }
 
-    familyPlayerSelect.value = loadFamilyPlayer();
-    familyPlayerSelect.addEventListener("change", () => {
-      const player = FAMILY_PLAYERS.includes(familyPlayerSelect.value)
-        ? familyPlayerSelect.value
-        : FAMILY_PLAYERS[0];
-      familyPlayerSelect.value = player;
+    let customPlayers = loadCustomPlayers();
+
+    function allPlayers() {
+      return [...DEFAULT_PLAYERS, ...customPlayers];
+    }
+
+    function saveCustomPlayers() {
       try {
-        localStorage.setItem(PLAYER_STORAGE_KEY, player);
+        localStorage.setItem(CUSTOM_PLAYERS_STORAGE_KEY, JSON.stringify(customPlayers));
+      } catch (error) {
+        console.warn("无法保存自定义玩家", error);
+      }
+    }
+
+    function saveCurrentPlayer(player) {
+      const selected = allPlayers().includes(player) ? player : DEFAULT_PLAYERS[0];
+      familyPlayerSelect.value = selected;
+      try {
+        localStorage.setItem(PLAYER_STORAGE_KEY, selected);
       } catch (error) {
         console.warn("无法保存玩家选择", error);
       }
+      return selected;
+    }
+
+    function loadCurrentPlayer() {
+      try {
+        const saved = normalizePlayerName(localStorage.getItem(PLAYER_STORAGE_KEY));
+        return allPlayers().includes(saved) ? saved : DEFAULT_PLAYERS[0];
+      } catch (error) {
+        return DEFAULT_PLAYERS[0];
+      }
+    }
+
+    function renderPlayerSelect(preferredPlayer = loadCurrentPlayer()) {
+      familyPlayerSelect.replaceChildren();
+      allPlayers().forEach((player) => {
+        const option = document.createElement("option");
+        option.value = player;
+        option.textContent = player;
+        familyPlayerSelect.append(option);
+      });
+      saveCurrentPlayer(preferredPlayer);
+    }
+
+    function renderPlayerList() {
+      playerList.replaceChildren();
+      allPlayers().forEach((player) => {
+        const row = document.createElement("div");
+        row.className = "player-row";
+
+        const name = document.createElement("span");
+        name.className = "player-name";
+        name.textContent = player;
+        row.append(name);
+
+        if (DEFAULT_PLAYERS.includes(player)) {
+          const label = document.createElement("span");
+          label.className = "default-player-label";
+          label.textContent = "默认玩家";
+          label.title = "默认玩家不能删除";
+          row.append(label);
+        } else {
+          const button = document.createElement("button");
+          button.className = "delete-player-button";
+          button.type = "button";
+          button.dataset.player = player;
+          button.textContent = "删除";
+          button.setAttribute("aria-label", `删除玩家${player}`);
+          row.append(button);
+        }
+        playerList.append(row);
+      });
+    }
+
+    function openPlayerModal() {
+      playerFormMessage.textContent = "";
+      newPlayerName.value = "";
+      renderPlayerList();
+      playerModal.classList.add("is-visible");
+      newPlayerName.focus();
+    }
+
+    function closePlayerModal() {
+      playerModal.classList.remove("is-visible");
+      managePlayersButton.focus();
+    }
+
+    renderPlayerSelect();
+    familyPlayerSelect.addEventListener("change", () => saveCurrentPlayer(familyPlayerSelect.value));
+    managePlayersButton.addEventListener("click", openPlayerModal);
+    playerModalClose.addEventListener("click", closePlayerModal);
+    playerModal.addEventListener("click", (event) => {
+      if (event.target === playerModal) closePlayerModal();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && playerModal.classList.contains("is-visible")) closePlayerModal();
+    });
+
+    addPlayerForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const player = normalizePlayerName(newPlayerName.value);
+      if (!player) {
+        playerFormMessage.textContent = "玩家名字不能为空";
+        return;
+      }
+      if (Array.from(player).length > 10) {
+        playerFormMessage.textContent = "玩家名字最多 10 个字符";
+        return;
+      }
+      if (allPlayers().includes(player)) {
+        playerFormMessage.textContent = "这个玩家已经存在";
+        return;
+      }
+
+      customPlayers.push(player);
+      saveCustomPlayers();
+      renderPlayerSelect(player);
+      renderPlayerList();
+      newPlayerName.value = "";
+      playerFormMessage.textContent = `已新增并切换到“${player}”`;
+    });
+
+    playerList.addEventListener("click", (event) => {
+      const button = event.target.closest(".delete-player-button");
+      if (!button) return;
+      const player = button.dataset.player;
+      if (!customPlayers.includes(player)) return;
+      if (!window.confirm(`确定删除玩家“${player}”吗？`)) return;
+
+      const wasCurrentPlayer = familyPlayerSelect.value === player;
+      customPlayers = customPlayers.filter((name) => name !== player);
+      saveCustomPlayers();
+      renderPlayerSelect(wasCurrentPlayer ? DEFAULT_PLAYERS[0] : familyPlayerSelect.value);
+      renderPlayerList();
+      playerFormMessage.textContent = `已删除“${player}”，历史排行榜成绩仍会保留`;
     });
 
     function renderGameCard(game) {

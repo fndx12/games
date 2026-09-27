@@ -189,7 +189,6 @@
     const SUPABASE_KEY = "sb_publishable_IoILNvOG-OvT6HhWILSpGw_0TJh81ue";
     const SCORE_API = `${SUPABASE_URL}/rest/v1/scores`;
     const GAME_ID = "mole_surprise_1min";
-    const FAMILY_PLAYERS = ["爸爸", "婠婠", "米宝"];
     const currentPlayer = loadFamilyPlayer();
 
     const itemTypes = [
@@ -214,7 +213,7 @@
     let scoreUploaded = false;
     const gameStartedAt = performance.now();
 
-    function loadFamilyPlayer() { try { const player=localStorage.getItem("familyPlayer"); return FAMILY_PLAYERS.includes(player)?player:FAMILY_PLAYERS[0]; } catch(error) { return FAMILY_PLAYERS[0]; } }
+    function loadFamilyPlayer() { try { const player=localStorage.getItem("familyPlayer");const normalized=typeof player==="string"?player.trim():"";return normalized&&Array.from(normalized).length<=10?normalized:"爸爸"; } catch(error) { return "爸爸"; } }
 
     // 创建地洞
     for (let i = 0; i < holeCount; i = i + 1) {

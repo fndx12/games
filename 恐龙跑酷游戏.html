@@ -439,7 +439,6 @@ const SUPABASE_KEY = "sb_publishable_IoILNvOG-OvT6HhWILSpGw_0TJh81ue";
 const SCORE_API = `${SUPABASE_URL}/rest/v1/scores`;
 const GAME_ID = "dino_runner";
 const PLAYER_STORAGE_KEY = "familyPlayer";
-const PLAYERS = ["爸爸", "婠婠", "米宝"];
 
 const DPR_LIMIT = 2;
 const GAME = {
@@ -773,9 +772,10 @@ function gameOver() {
 function loadPlayer() {
   try {
     const savedPlayer = localStorage.getItem(PLAYER_STORAGE_KEY);
-    return PLAYERS.includes(savedPlayer) ? savedPlayer : PLAYERS[0];
+    const normalized = typeof savedPlayer === "string" ? savedPlayer.trim() : "";
+    return normalized && Array.from(normalized).length <= 10 ? normalized : "爸爸";
   } catch (error) {
-    return PLAYERS[0];
+    return "爸爸";
   }
 }
 

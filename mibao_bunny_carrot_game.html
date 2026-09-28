@@ -113,6 +113,67 @@
       display: none;
     }
 
+    .touch-dpad {
+      position: absolute;
+      z-index: 8;
+      left: 14px;
+      bottom: 14px;
+      display: grid;
+      grid-template-columns: repeat(3, 52px);
+      grid-template-rows: repeat(3, 52px);
+      gap: 5px;
+      align-items: center;
+      justify-items: center;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      touch-action: none;
+    }
+
+    .dpad-button,
+    .dpad-center {
+      width: 52px;
+      height: 52px;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+    }
+
+    .dpad-button {
+      border: 2px solid rgba(78, 143, 52, 0.68);
+      background: rgba(255, 255, 255, 0.76);
+      color: #3f7f2d;
+      box-shadow: 0 4px 10px rgba(55, 103, 37, 0.2);
+      font: inherit;
+      font-size: 25px;
+      font-weight: 900;
+      cursor: pointer;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    .dpad-button.is-pressed,
+    .dpad-button:active {
+      transform: translateY(2px);
+      background: rgba(255, 244, 174, 0.92);
+      box-shadow: 0 2px 5px rgba(55, 103, 37, 0.2);
+    }
+
+    .dpad-center {
+      background: rgba(122, 199, 79, 0.5);
+      color: rgba(47, 102, 35, 0.82);
+      font-size: 20px;
+      pointer-events: none;
+    }
+
+    .dpad-up { grid-column: 2; grid-row: 1; }
+    .dpad-left { grid-column: 1; grid-row: 2; }
+    .dpad-center { grid-column: 2; grid-row: 2; }
+    .dpad-right { grid-column: 3; grid-row: 2; }
+    .dpad-down { grid-column: 2; grid-row: 3; }
+
     .tip {
       margin-top: 12px;
       color: #555;
@@ -139,6 +200,22 @@
     .online-retry { display:none; margin-top:16px; }
     .online-retry.is-visible { display:inline-block; }
     @media (max-width:680px) { .online-grid { grid-template-columns:1fr; } .online-section:first-child { grid-column:auto; } .online-row { font-size:13px; } }
+    @media (max-width:680px), (max-height:520px) {
+      .touch-dpad {
+        left: 9px;
+        bottom: 9px;
+        grid-template-columns: repeat(3, 46px);
+        grid-template-rows: repeat(3, 46px);
+        gap: 4px;
+      }
+      .dpad-button,
+      .dpad-center {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+      }
+      .dpad-button { font-size: 22px; }
+    }
   </style>
 </head>
 <body>
@@ -157,9 +234,16 @@
       </div>
       <div id="carrot" class="carrot">🥕</div>
       <div id="message" class="message"></div>
+      <div id="touchDpad" class="touch-dpad" aria-label="触屏方向键">
+        <button class="dpad-button dpad-up" type="button" data-direction="up" aria-label="向上移动">↑</button>
+        <button class="dpad-button dpad-left" type="button" data-direction="left" aria-label="向左移动">←</button>
+        <span class="dpad-center" aria-hidden="true">●</span>
+        <button class="dpad-button dpad-right" type="button" data-direction="right" aria-label="向右移动">→</button>
+        <button class="dpad-button dpad-down" type="button" data-direction="down" aria-label="向下移动">↓</button>
+      </div>
     </div>
 
-    <div class="tip">按键盘方向键，帮助小兔子在 1 分钟内尽量多吃胡萝卜吧。</div>
+    <div class="tip">使用方向键、WASD 或屏幕方向键，帮助小兔子在 1 分钟内尽量多吃胡萝卜吧。</div>
     <div class="online-bar">
       <span>当前玩家：<strong id="familyPlayerDisplay">爸爸</strong></span>
       <button id="leaderboardButton" class="online-button" type="button">在线排行榜</button>
@@ -197,6 +281,8 @@
     const recentScores = document.getElementById("recentScores");
     const myScores = document.getElementById("myScores");
     const myScoresTitle = document.getElementById("myScoresTitle");
+    const touchDpad = document.getElementById("touchDpad");
+    const dpadButtons = Array.from(touchDpad.querySelectorAll(".dpad-button"));
 
     const SUPABASE_URL = "https://euvhugrohdejsjdehkze.supabase.co";
     const SUPABASE_KEY = "sb_publishable_IoILNvOG-OvT6HhWILSpGw_0TJh81ue";
@@ -225,6 +311,9 @@
     let gameOver = false;
     let carrotTimer = null;
     let clockTimer = null;
+    let touchMoveTimer = null;
+    let activePointerId = null;
+    let activeDpadButton = null;
     let scoreUploaded = false;
     const gameStartedAt = performance.now();
 
@@ -281,6 +370,7 @@
     function endGame() {
       if (gameOver) return;
       gameOver = true;
+      stopTouchMove();
       clearInterval(clockTimer);
       clearInterval(carrotTimer);
       carrot.style.display = "none";
@@ -379,45 +469,82 @@
       }
     }
 
-    // 监听键盘，按方向键时移动小兔子
-    document.addEventListener("keydown", function (event) {
-      if (leaderboardModal.classList.contains("is-visible")) return;
-      if (gameOver) {
+    // 键盘和触屏共用同一套移动、边界和碰撞规则。
+    function moveBunny(direction) {
+      if (gameOver || leaderboardModal.classList.contains("is-visible")) {
         return;
       }
 
-      if (event.key === "ArrowUp") {
-        bunnyData.y = bunnyData.y - bunnyData.speed;
-      }
+      if (direction === "up") bunnyData.y -= bunnyData.speed;
+      if (direction === "down") bunnyData.y += bunnyData.speed;
+      if (direction === "left") bunnyData.x -= bunnyData.speed;
+      if (direction === "right") bunnyData.x += bunnyData.speed;
 
-      if (event.key === "ArrowDown") {
-        bunnyData.y = bunnyData.y + bunnyData.speed;
-      }
-
-      if (event.key === "ArrowLeft") {
-        bunnyData.x = bunnyData.x - bunnyData.speed;
-      }
-
-      if (event.key === "ArrowRight") {
-        bunnyData.x = bunnyData.x + bunnyData.speed;
-      }
-
-      // 不让小兔子跑出游戏区域
-      if (bunnyData.x < 0) {
-        bunnyData.x = 0;
-      }
-      if (bunnyData.y < 0) {
-        bunnyData.y = 0;
-      }
-      if (bunnyData.x > gameWidth - bunnyWidth) {
-        bunnyData.x = gameWidth - bunnyWidth;
-      }
-      if (bunnyData.y > gameHeight - bunnyHeight) {
-        bunnyData.y = gameHeight - bunnyHeight;
-      }
-
+      bunnyData.x = Math.max(0, Math.min(bunnyData.x, gameWidth - bunnyWidth));
+      bunnyData.y = Math.max(0, Math.min(bunnyData.y, gameHeight - bunnyHeight));
       drawBunny();
       checkEatCarrot();
+    }
+
+    function stopTouchMove(pointerId = null) {
+      if (pointerId !== null && activePointerId !== pointerId) return;
+      if (touchMoveTimer) {
+        clearInterval(touchMoveTimer);
+        touchMoveTimer = null;
+      }
+      if (activeDpadButton) {
+        activeDpadButton.classList.remove("is-pressed");
+        activeDpadButton = null;
+      }
+      activePointerId = null;
+    }
+
+    function startTouchMove(event) {
+      if (event.button !== undefined && event.button !== 0) return;
+      event.preventDefault();
+      if (gameOver || leaderboardModal.classList.contains("is-visible")) return;
+
+      stopTouchMove();
+      const button = event.currentTarget;
+      const direction = button.dataset.direction;
+      activePointerId = event.pointerId;
+      activeDpadButton = button;
+      button.classList.add("is-pressed");
+      if (button.setPointerCapture) button.setPointerCapture(event.pointerId);
+
+      moveBunny(direction);
+      touchMoveTimer = setInterval(() => moveBunny(direction), 60);
+    }
+
+    // 保留方向键，并增加 WASD；按住时由浏览器键盘重复事件持续移动。
+    document.addEventListener("keydown", function (event) {
+      if (leaderboardModal.classList.contains("is-visible")) return;
+      const directionByCode = {
+        ArrowUp: "up",
+        KeyW: "up",
+        ArrowDown: "down",
+        KeyS: "down",
+        ArrowLeft: "left",
+        KeyA: "left",
+        ArrowRight: "right",
+        KeyD: "right"
+      };
+      const direction = directionByCode[event.code];
+      if (!direction) return;
+      event.preventDefault();
+      moveBunny(direction);
+    });
+
+    dpadButtons.forEach((button) => {
+      button.addEventListener("pointerdown", startTouchMove);
+      button.addEventListener("pointerup", (event) => stopTouchMove(event.pointerId));
+      button.addEventListener("pointercancel", (event) => stopTouchMove(event.pointerId));
+      button.addEventListener("lostpointercapture", (event) => stopTouchMove(event.pointerId));
+      button.addEventListener("contextmenu", (event) => event.preventDefault());
+    });
+    window.addEventListener("blur", () => stopTouchMove());
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) stopTouchMove();
     });
 
     // 游戏开始时先显示一次
@@ -429,7 +556,7 @@
     startCarrotLoop();
     familyPlayerDisplay.textContent = currentPlayer;
     myScoresTitle.textContent = `${currentPlayer}的最近 10 局`;
-    leaderboardButton.addEventListener("click",()=>{leaderboardModal.classList.add("is-visible");loadLeaderboard();});
+    leaderboardButton.addEventListener("click",()=>{stopTouchMove();leaderboardModal.classList.add("is-visible");loadLeaderboard();});
     leaderboardClose.addEventListener("click",()=>leaderboardModal.classList.remove("is-visible"));
     leaderboardRetry.addEventListener("click",loadLeaderboard);
     leaderboardModal.addEventListener("click",event=>{if(event.target===leaderboardModal)leaderboardModal.classList.remove("is-visible");});

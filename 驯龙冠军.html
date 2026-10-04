@@ -52,6 +52,13 @@
       .side{display:block;max-height:calc(100dvh - 82px);overflow:auto}.side .panel{margin-bottom:8px}.panel{padding:8px}
       .touch-controls{grid-template-columns:repeat(3,38px);grid-template-rows:repeat(3,38px);gap:3px;left:8px;bottom:8px}.action-touch{width:52px;height:52px;right:10px;bottom:10px}
     }
+    .map-bag{position:absolute;right:14px;bottom:94px;width:48px;height:46px;padding:8px;z-index:2}
+    .map-bag span{font-size:25px;line-height:1}
+    .fishing-bar{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;background:#303b4cf2;color:#fff8e4;padding:8px;border:2px solid #ddd7c3;border-radius:5px;max-width:calc(100% - 190px);font-size:13px}
+    .fishing-bar .pixel-btn{color:#263238}.fishing-bar span{min-width:0;overflow-wrap:anywhere}.fishing-bar button{white-space:nowrap;min-width:60px}
+    .inventory-count{padding:12px;border-bottom:1px solid #b9b6a7}.rod-list{display:grid;gap:10px;margin-top:16px}.synthesis{text-align:center;animation:egg-flash 1.8s ease-out}.synthesis .egg{display:block;color:#769463}
+    @keyframes egg-flash{0%,25%{background:#fffbe6;filter:brightness(1.9)}100%{filter:brightness(1)}}
+    @media(max-width:600px){.map-bag{right:33px;bottom:116px}.fishing-bar{left:auto;right:10px;bottom:12px;transform:none;max-width:calc(100% - 164px);flex-wrap:wrap;font-size:11px;gap:4px;padding:5px}.fishing-bar button{min-height:44px;font-size:12px}.fishing-bar span{flex-basis:100%}}
   </style>
 </head>
 <body>
@@ -60,12 +67,16 @@
     <section class="game-layout">
       <div id="worldWrap" class="world-wrap">
         <canvas id="game" width="768" height="480" aria-label="驯龙世界地图"></canvas><div id="mapLabel" class="map-label">博士研究所</div><div id="hint" class="hint">方向键 / WASD 移动，空格互动</div>
+        <button id="mapBagBtn" class="pixel-btn map-bag" title="背包" aria-label="背包"><span aria-hidden="true">🎒</span></button>
+        <div id="fishingBar" class="fishing-bar" hidden><span id="fishingStatus" aria-live="polite"></span><button id="reelBtn" class="pixel-btn" hidden>收竿</button><button id="cancelFishing" class="pixel-btn">取消</button></div>
         <div class="touch-controls" aria-label="触屏方向键"><button class="touch-btn up" data-dir="up" aria-label="向上">↑</button><button class="touch-btn left" data-dir="left" aria-label="向左">←</button><span class="touch-dot">●</span><button class="touch-btn right" data-dir="right" aria-label="向右">→</button><button class="touch-btn down" data-dir="down" aria-label="向下">↓</button></div><button id="actionTouch" class="action-touch" aria-label="互动">互动</button>
       </div>
       <aside class="side"><section class="panel"><h2>当前队伍 <span id="teamCount"></span></h2><div id="teamList" class="team-list"></div></section><section class="panel"><h2>冒险进度</h2><div id="progress"></div><div class="mini-actions"><button id="saveBtn" class="pixel-btn">保存</button><button id="helpBtn" class="pixel-btn">玩法</button></div></section><section class="panel log-panel"><h2>旅途记录</h2><div id="worldLog" class="log"></div></section></aside>
     </section>
   </main>
 
+    .synthesis p:nth-of-type(2),.synthesis strong{animation:egg-reveal .5s .9s both}
+    @keyframes egg-reveal{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
   <div id="startOverlay" class="overlay"><div class="dialog"><h2>欢迎来到龙栖谷</h2><p>先选择你的冒险者。外观不同，但能力完全相同。</p><div class="choices"><button class="choice gender-card" data-gender="男">🧑<strong>男孩</strong></button><button class="choice gender-card" data-gender="女">👧<strong>女孩</strong></button></div></div></div>
   <div id="starterOverlay" class="overlay" role="dialog" aria-label="选择第一颗龙蛋"><div class="dialog"><div class="doctor-dialogue"><canvas id="doctorPortrait" class="doctor-portrait" width="70" height="84"></canvas><div><h2>博士</h2><p id="starterSpeech">欢迎你！在开始驯龙之旅以前，先选择你的第一颗龙蛋吧！</p></div></div><div id="starterChoices" class="choices"></div><div id="hatchStage" hidden><canvas id="hatchArt" class="hatch-art" width="210" height="200"></canvas><p id="hatchMessage" class="hatch-message"></p><button id="hatchContinue" class="pixel-btn primary" hidden>带上伙伴，出发吧</button></div></div></div>
   <div id="encounterOverlay" class="overlay"><div class="dialog"><h2 id="encounterTitle">遇见野生龙</h2><div id="encounterInfo"></div><div class="dialog-actions"><button class="pixel-btn red" data-encounter="battle">对战</button><button class="pixel-btn green" data-encounter="normal">普通鱼驯服</button><button class="pixel-btn primary" data-encounter="rare">高级鱼驯服</button><button class="pixel-btn" data-encounter="leave">离开</button></div></div></div>
@@ -73,6 +84,7 @@
   <div id="serviceOverlay" class="overlay"><div class="dialog wide"><h2 id="serviceTitle">博士研究所</h2><div id="serviceBody"></div><div class="dialog-actions"><button id="serviceClose" class="pixel-btn">关闭</button></div></div></div>
   <div id="learnOverlay" class="overlay"><div class="dialog"><h2>学会新招式</h2><p id="learnText"></p><div id="learnChoices" class="choices"></div></div></div>
   <div id="helpOverlay" class="overlay"><div class="dialog"><h2>冒险指南</h2><p><b>移动：</b>方向键或 WASD；手机和平板可使用屏幕方向键。靠近人物或设施按空格，也可点“互动”。</p><p><b>目标：</b>在森林驯龙、战斗升级、洞穴找蛋。拥有至少 2 条龙并赢得 3 场野外战斗后，竞技场会开放。</p><p><b>研究所：</b>博士可治疗、孵蛋和管理队伍；柜台可以买药和鱼。最多携带 3 条龙。</p><div class="dialog-actions"><button class="pixel-btn primary" data-close="helpOverlay">知道了</button></div></div></div>
+  <div id="inventoryOverlay" class="overlay" role="dialog" aria-label="地图背包"><div class="dialog"><h2>背包</h2><div id="inventoryBody"></div><div class="dialog-actions"><button class="pixel-btn" data-close="inventoryOverlay">关闭</button></div></div></div>
   <div id="toast" class="toast"></div>
 
   <script>
@@ -92,15 +104,20 @@
       一般:{names:["小角龙","巨角龙","远古巨龙"],color:"#a57b58",icon:"🦴",base:[112,27,25,17],moves:[["撞击",30],["甩尾",40],["猛撞",50],["角击",55],["重踏",45],["咆哮冲击",35],["巨角冲锋",65],["远古猛击",75]]}
     };
     const LEARN=[1,4,7,10,14,18,23,28],SAVE_PREFIX="dragonChampionV1:";
-    // Real-time durations in milliseconds; all reward timers use these two settings.
+    // World reward cooldowns use real-time milliseconds.
     const CAVE_COOLDOWN = 5 * 60 * 1000;
     const CHEST_RESPAWN_TIME = 5 * 60 * 1000;
-    const freshChest=()=>({active:false,position:null,lastOpenedAt:0,nextSpawnAt:0,lastPosition:null});
+    const FISHING = {rodPrice:200,rodDurability:50,range:110,minWait:3000,maxWait:8000,approach:1800,biteWindow:1000};
+    const THORN = {names:["小刺龙","荆刺龙","荒漠刺龙"],base:[132,25,34,12],moves:[["藤鞭",30],["尖刺反击",0],["叶片斩",40],["荆棘刺",50],["藤蔓冲击",55],["青草回复",0],["森林冲锋",50],["古树之怒",70]]};
+    const dragonData=d=>d.species==="thorn"?THORN:TYPES[d.type];
+    const freshQuest=()=>({visited:[],spines:0,eggCreated:false,completed:false});
+    const freshChest=()=>({active:false,map:"forest",position:null,lastOpenedAt:0,nextSpawnAt:0,lastPosition:null});
     let playerName="爸爸";
     try{playerName=localStorage.getItem("familyPlayer")||"爸爸"}catch(error){}
     $("#playerLabel").textContent=`当前玩家：${playerName}`;
-    const fresh=()=>({version:1,worldRevision:2,intro:"gender",starterType:null,gender:null,map:"lab",x:374,y:282,coins:240,bag:{potion:2,fish:3,rareFish:1},team:[],park:[],eggs:[],wins:0,champion:false,chests:[],caveReadyAt:{forest:0},randomChest:freshChest(),wildSeed:Date.now(),logs:["欢迎来到龙栖谷。"]});
+    const fresh=()=>({version:1,worldRevision:2,intro:"gender",starterType:null,gender:null,map:"lab",x:374,y:282,coins:240,bag:{potion:2,fish:3,rareFish:1},rods:[],nextRodId:1,fishing:null,thornQuest:freshQuest(),team:[],park:[],eggs:[],wins:0,champion:false,chests:[],caveReadyAt:{forest:0},randomChest:freshChest(),wildSeed:Date.now(),logs:["欢迎来到龙栖谷。"]});
     let state=fresh(), keys={}, activeWild=null, battle=null, modalOpen=false, last=0;
+    let selectedRod=null;
     let ignoredWild=null,portalCooldown=0,hatchStart=0,hatchTimer=null,facing=1;
     const camera={x:0,y:0},follower={x:350,y:310};
     const saveKey=()=>SAVE_PREFIX+playerName;
@@ -112,6 +129,10 @@
         state=Object.assign(fresh(),saved);
         state.caveReadyAt=Object.assign({forest:0},saved.caveReadyAt);
         state.randomChest=Object.assign(freshChest(),saved.randomChest);
+        state.rods=Array.isArray(saved.rods)?saved.rods.filter(r=>r.durability>0):[];
+        state.nextRodId=Math.max(saved.nextRodId||1,...state.rods.map(r=>Number(r.id)+1));
+        state.thornQuest=Object.assign(freshQuest(),saved.thornQuest);
+        if(state.fishing&&!state.rods.some(r=>r.id===state.fishing.rodId))state.fishing=null;
         // Old one-off chests have no opening timestamp. Start their first respawn wait on migration.
         if(!saved.randomChest&&saved.chests?.includes("forest"))state.randomChest.nextSpawnAt=Date.now()+CHEST_RESPAWN_TIME;
         // Existing companions prove that the original opening has already completed.
@@ -125,8 +146,8 @@
         if(!saved.randomChest)save(false);
       }catch(error){}
     }
-    function makeDragon(type,level=1){const t=TYPES[type], [hp,atk,def,spd]=t.base, scale=level-1,form=level>=20?2:level>=10?1:0;const d={id:Date.now()+Math.random(),type,level,exp:0,form,maxHp:hp+scale*7,atk:atk+scale*2,def:def+scale*2,spd:spd+scale*2,hp:hp+scale*7,moves:[]};for(let i=0;i<LEARN.length;i++)if(level>=LEARN[i])d.moves.push(t.moves[i]);d.moves=d.moves.slice(-4);return d}
-    const dragonName=d=>TYPES[d.type].names[d.form];
+    function makeDragon(type,level=1){const species=type==="thorn"?"thorn":null;if(species)type="草";const t=species?THORN:TYPES[type], [hp,atk,def,spd]=t.base, scale=level-1,form=level>=20?2:level>=10?1:0;const d={id:Date.now()+Math.random(),type,species,level,exp:0,form,maxHp:hp+scale*7,atk:atk+scale*2,def:def+scale*2,spd:spd+scale*2,hp:hp+scale*7,moves:[]};for(let i=0;i<LEARN.length;i++)if(level>=LEARN[i])d.moves.push(t.moves[i]);d.moves=d.moves.slice(-4);return d}
+    const dragonName=d=>dragonData(d).names[d.form];
     function log(msg){state.logs.unshift(msg);state.logs=state.logs.slice(0,20);renderUI()}
     function toast(msg){const el=$("#toast");el.textContent=msg;el.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove("show"),1800)}
     function show(id){keys={};$("#"+id).classList.add("show");modalOpen=true}function hide(id){$("#"+id).classList.remove("show");modalOpen=$$(".overlay.show").length>0}
@@ -135,34 +156,56 @@
     const TILE=16;
     const maps={
       lab:{name:"博士的小屋",w:768,h:480,door:{x:352,y:427,w:64,h:42},doctor:{x:358,y:195,w:52,h:52},shop:{x:553,y:157,w:72,h:66},hatch:{x:171,y:163,w:74,h:62},park:{x:568,y:305,w:70,h:70}},
-      forest:{name:"翡翠森林",w:2304,h:1440,lab:{x:324,y:373,w:40,h:24},cave:{x:1708,y:805,w:66,h:38},arena:{x:1860,y:304,w:64,h:32}},
+      desert:{name:"琥珀沙漠",w:2304,h:1440,exit:{x:24,y:670,w:42,h:78}},
+      forest:{name:"翡翠森林",w:2304,h:1440,desert:{x:2210,y:1070,w:64,h:70},lab:{x:324,y:373,w:40,h:24},cave:{x:1708,y:805,w:66,h:38},arena:{x:1860,y:304,w:64,h:32}},
       arena:{name:"冠军竞技场",w:768,h:480,exit:{x:352,y:427,w:64,h:42},champ:{x:353,y:130,w:62,h:52}}
     };
-    let wilds=[];
+    const WILD_TARGET = 9;
+    let wilds=[],wildLocations=null,desertWildLocations=[],nextWildId=0;
     function spawnWilds(){
+      if(wildLocations){wilds=[];maintainWilds();return}
       const types=Object.keys(TYPES),positions=[[500,548],[775,300],[730,920],[1330,530],[1550,1090],[2010,480],[1930,1130],[415,1200],[1390,265]];
       wilds=positions.map(([x,y],i)=>({x,y,type:types[(state.wildSeed+i*4+1)%9],level:2+state.wins+i%3,id:i,active:true}));
+    }
+    function maintainWilds(){
+      if(!wildLocations)return;
+      wilds=wilds.filter(w=>w.active);
+      for(const map of ["forest","desert"]){
+        const locations=map==="forest"?wildLocations:desertWildLocations;
+        while(wilds.filter(w=>w.map===map).length<WILD_TARGET){
+          const chest=state.randomChest;
+          const candidates=locations.filter(p=>!wilds.some(w=>w.map===map&&Math.hypot(p.x-w.x,p.y-w.y)<100)&&(!chest.active||chest.map!==map||Math.hypot(p.x-chest.position.x,p.y-chest.position.y)>100));
+          const distant=candidates.filter(p=>state.map!==map||(Math.hypot(p.x-state.x,p.y-state.y)>420&&(Math.abs(p.x-state.x)>420||Math.abs(p.y-state.y)>280)));
+          const pool=distant.length?distant:candidates.filter(p=>state.map!==map||Math.hypot(p.x-state.x,p.y-state.y)>180);
+          if(!pool.length)break;
+          const p=pool[Math.floor(Math.random()*pool.length)],types=map==="desert"?["火","火","火","一般","一般","一般","光","光","光","毒","毒","毒","水","冰","雷","草","暗"]:Object.keys(TYPES);
+          wilds.push({...p,map,type:types[Math.floor(Math.random()*types.length)],level:2+state.wins+Math.floor(Math.random()*3),id:++nextWildId,active:true});
+        }
+      }
     }
     function rectHit(a,b,pad=0){return a.x+a.w>b.x-pad&&a.x<b.x+b.w+pad&&a.y+a.h>b.y-pad&&a.y<b.y+b.h+pad}
     const playerRect=()=>({x:state.x,y:state.y,w:20,h:28});
     function near(r,p=22){return rectHit(playerRect(),r,p)}
-    function setMap(map,x,y){state.map=map;state.x=x;state.y=y;follower.x=x-30;follower.y=y+10;portalCooldown=performance.now()+900;updateCamera();$("#mapLabel").textContent=maps[map].name;log(`来到${maps[map].name}`);save(false)}
+    function setMap(map,x,y){if(state.fishing)return;selectedRod=null;ignoredWild=null;state.map=map;state.x=x;state.y=y;follower.x=x-30;follower.y=y+10;portalCooldown=performance.now()+900;updateCamera();$("#mapLabel").textContent=maps[map].name;log(`来到${maps[map].name}`);save(false)}
     function enterArena(){if(canChallenge()||state.champion)return setMap("arena",374,386);toast("需要2条龙并赢得3场野外战斗")}
     function interact(){
+      if(state.fishing)return reelFishing();
       if(modalOpen)return;
       const m=maps[state.map];
+      if(chestRect()&&near(chestRect()))return chest();
+      if(state.map==="desert"){if(near(m.exit))return setMap("forest",2160,1090);const cactus=desertScenery.find(c=>c.kind==="cactus"&&near(c,26));if(cactus)return cactus.special?collectSpine(cactus):toast("仙人掌在沙风中轻轻摇晃。")}
       if(state.map==="lab"){
         if(near(m.doctor))return doctor();if(near(m.shop))return shop();if(near(m.hatch))return hatchery();if(near(m.park))return park();
         if(near(m.door))return setMap("forest",335,416);
       }
       if(state.map==="forest"){
-        if(near(m.lab))return setMap("lab",374,386);if(near(m.cave))return cave();if(chestRect()&&near(chestRect()))return chest();if(near(m.arena))return enterArena();
+        if(near(m.desert))return setMap("desert",96,704);if(near(m.lab))return setMap("lab",374,386);if(near(m.cave))return cave();if(chestRect()&&near(chestRect()))return chest();if(near(m.arena))return enterArena();
       }
       if(state.map==="arena"){if(near(m.exit))return setMap("forest",1882,358);if(near(m.champ))return champion()}
       toast("走近人物或入口后再互动");
     }
     function doctor(){openService("博士",`<p>“欢迎回来，${playerName}！我可以治疗所有龙，也可以帮你孵蛋。”</p><div class="dialog-actions"><button class="pixel-btn green" data-service="heal">治疗全部</button><button class="pixel-btn primary" data-service="hatch">孵化龙蛋（${state.eggs.length}）</button><button class="pixel-btn" data-service="park">管理龙园</button></div>`)}
-    function shop(){openService("研究所商店",`<p>金币：${state.coins}</p><div class="list-grid"><div class="item-card"><b>回血药</b><p>恢复60 HP</p><button class="pixel-btn" data-buy="potion" data-price="60">60金币</button></div><div class="item-card"><b>普通鱼</b><p>基础驯服机会</p><button class="pixel-btn" data-buy="fish" data-price="35">35金币</button></div><div class="item-card"><b>高级鱼</b><p>更高驯服机会</p><button class="pixel-btn" data-buy="rareFish" data-price="110">110金币</button></div></div>`)}
+    function shop(){openService("研究所商店",`<p>金币：${state.coins}</p><div class="list-grid"><div class="item-card"><b>回血药</b><p>恢复60 HP</p><button class="pixel-btn" data-buy="potion" data-price="60">60金币</button></div><div class="item-card"><b>普通鱼</b><p>基础驯服机会</p><button class="pixel-btn" data-buy="fish" data-price="35">35金币</button></div><div class="item-card"><b>高级鱼</b><p>更高驯服机会</p><button class="pixel-btn" data-buy="rareFish" data-price="110">110金币</button></div><div class="item-card"><b>鱼竿</b><p>耐久 50/50</p><button class="pixel-btn" data-buy="rod" data-price="200">200金币</button></div></div>`)}
     function hatchery(){openService("孵蛋区域",state.eggs.length?`<p>你有 ${state.eggs.length} 颗龙蛋。博士可以免费孵化。</p><button class="pixel-btn primary" data-service="hatch">孵化一颗</button>`:"<p>暂时没有龙蛋。去森林洞穴找找吧。</p>")}
     function park(){const all=[...state.team.map(d=>({d,loc:"team"})),...state.park.map(d=>({d,loc:"park"}))];openService("龙园与队伍",`<p>点击龙伙伴可在队伍和龙园之间移动。队伍最多3条，至少保留1条。</p><div class="list-grid">${all.map(({d,loc})=>`<div class="item-card"><b>${TYPES[d.type].icon} ${dragonName(d)} Lv.${d.level}</b><p>${loc==="team"?"当前队伍":"博士龙园"} · HP ${d.hp}/${d.maxHp}</p><button class="pixel-btn" data-transfer="${d.id}" data-from="${loc}">${loc==="team"?"存入龙园":"加入队伍"}</button></div>`).join("")}</div>`)}
     function openService(title,html){$("#serviceTitle").textContent=title;$("#serviceBody").innerHTML=html;show("serviceOverlay")}
@@ -178,21 +221,106 @@
     }
     function chestRect(){
       const chest=state.randomChest;
-      return chest.active&&chest.position?{...chest.position,w:32,h:28}:null;
+      return chest.active&&chest.map===state.map&&chest.position?{...chest.position,w:32,h:28}:null;
     }
     function chest(){
       const area=chestRect();
-      if(state.map!=="forest"||!area||!near(area))return;
+      if(!["forest","desert"].includes(state.map)||!area||!near(area))return;
       const now=Date.now(),chest=state.randomChest;
       // Claim and remove before granting rewards, so repeated inputs cannot open the same chest.
-      chest.active=false;chest.lastPosition={...chest.position};chest.position=null;
+      chest.active=false;chest.lastPosition={...chest.position,map:chest.map};chest.position=null;
       chest.lastOpenedAt=now;chest.nextSpawnAt=now+CHEST_RESPAWN_TIME;
       const roll=Math.random();let reward;
       if(roll<.50){const gold=30+Math.floor(Math.random()*31);state.coins+=gold;reward=`${gold}金币`}
       else if(roll<.75){state.bag.potion++;reward="1瓶回血药"}
       else if(roll<.95){state.bag.fish++;reward="1条普通鱼"}
       else{state.bag.rareFish++;reward="1条高级鱼"}
-      log(`打开森林宝箱：${reward}`);toast(`找到${reward}`);save(false);
+      log(`打开${state.map==="desert"?"沙漠":"森林"}宝箱：${reward}`);toast(`找到${reward}`);save(false);
+    }
+    function buyItem(item){
+      const prices={potion:60,fish:35,rareFish:110,rod:FISHING.rodPrice},price=prices[item];
+      if(!price||state.coins<price)return toast("金币不够");
+      state.coins-=price;
+      if(item==="rod")state.rods.push({id:state.nextRodId++,durability:FISHING.rodDurability});
+      else state.bag[item]++;
+      save(false);shop();renderUI();
+    }
+    function openInventory(){
+      if(modalOpen||state.intro!=="done"||state.fishing)return;
+      $("#inventoryBody").innerHTML=`<div class="move-menu"><button class="pixel-btn move-btn" data-map-potion="1" ${state.bag.potion?"":"disabled"}>回血药 ×${state.bag.potion}</button><div class="inventory-count">普通鱼 ×${state.bag.fish}</div><div class="inventory-count">高级鱼 ×${state.bag.rareFish}</div></div><div class="rod-list">${state.rods.length?state.rods.map(r=>`<button class="pixel-btn move-btn" data-rod="${r.id}">鱼竿　耐久 ${r.durability}/${FISHING.rodDurability}</button>`).join(""):'<p>鱼竿 ×0</p>'}</div>`+
+        (state.thornQuest.spines?`<p>仙人掌刺 ×${state.thornQuest.spines}</p>`:"")+
+        (state.eggs.includes("thorn")?"<p>刺龙蛋 ×1</p>":"");
+      show("inventoryOverlay");
+    }
+    function selectRod(id){
+      if(state.fishing||!state.rods.some(r=>r.id===id&&r.durability>0))return;
+      selectedRod=id;hide("inventoryOverlay");updateFishingUI();
+    }
+    function canCast(x,y){
+      if(!outdoors(state.map)||!waterAt(state.map,x,y)||!canStand(state.x,state.y))return false;
+      const sx=state.x+12,sy=state.y+23,distance=Math.hypot(x-sx,y-sy);
+      if(distance>FISHING.range||distance<12)return false;
+      const obstacles=state.map==="desert"?desertScenery:scenery.concat([{x:246,y:213,w:195,h:190},{x:1785,y:160,w:225,h:190},{x:1615,y:690,w:230,h:153}]);
+      for(let step=4;step<distance;step+=4){
+        const px=sx+(x-sx)*step/distance,py=sy+(y-sy)*step/distance;
+        if(obstacles.some(o=>px>=o.x&&px<=o.x+o.w&&py>=o.y&&py<=o.y+o.h))return false;
+      }
+      return true;
+    }
+    function castFishing(x,y){
+      if(modalOpen||battle||state.fishing||selectedRod===null)return;
+      if(!state.rods.some(r=>r.id===selectedRod&&r.durability>0))return;
+      if(!canCast(x,y))return toast("请靠近无遮挡的水边。");
+      const castAt=Date.now(),wait=FISHING.minWait+Math.floor(Math.random()*(FISHING.maxWait-FISHING.minWait+1));
+      state.fishing={rodId:selectedRod,map:state.map,x,y,castAt,bubblesAt:castAt+wait,biteAt:castAt+wait+FISHING.approach,expiresAt:castAt+wait+FISHING.approach+FISHING.biteWindow};
+      const offset=[[24,0],[-24,0],[0,24],[0,-24]].find(([dx,dy])=>waterAt(state.map,x+dx,y+dy))||[0,0];
+      state.fishing.bubbleX=x+offset[0];state.fishing.bubbleY=y+offset[1];
+      keys={};save(false);updateFishingUI();
+    }
+    function fishingPhase(now=Date.now()){
+      const f=state.fishing;if(!f)return "idle";
+      return now<f.bubblesAt?"waiting":now<f.biteAt?"approaching":now<=f.expiresAt?"bite":"escaped";
+    }
+    function fishingReward(){
+      const roll=Math.random();
+      if(roll<.65){state.bag.fish++;return "普通鱼 ×1"}
+      if(roll<.80){state.bag.rareFish++;return "高级鱼 ×1"}
+      if(roll<.95){const gold=10+Math.floor(Math.random()*41);state.coins+=gold;return gold+"金币"}
+      state.bag.potion++;return "回血药 ×1";
+    }
+    function reelFishing(){
+      const f=state.fishing;if(!f||modalOpen)return;
+      const rod=state.rods.find(r=>r.id===f.rodId),phase=fishingPhase();
+      // Reeling is the single commit point for both durability and rewards.
+      state.fishing=null;
+      let message=phase==="bite"?"钓到了："+fishingReward():phase==="escaped"?"鱼跑掉了！":"还没有鱼上钩。";
+      if(rod){rod.durability--;if(rod.durability<=0){state.rods=state.rods.filter(r=>r!==rod);selectedRod=null;message+=" 鱼竿坏掉了！"}else selectedRod=rod.id}
+      keys={};save(false);log(message);toast(message);updateFishingUI();
+    }
+    function updateFishingUI(){
+      const active=!!state.fishing,ready=selectedRod!==null;
+      $("#fishingBar").hidden=!active&&!ready;
+      $("#reelBtn").hidden=!active;$("#cancelFishing").hidden=active;
+      const phase=fishingPhase();
+      const message=active?({waiting:"等待鱼讯……",approaching:"泡泡正在靠近……",bite:"上钩了！",escaped:"鱼跑掉了！"})[phase]:"准备钓鱼";
+      if($("#fishingStatus").textContent!==message)$("#fishingStatus").textContent=message;
+      $("#reelBtn").classList.toggle("primary",phase==="bite");
+      $("#actionTouch").hidden=active||ready;
+      $("#mapBagBtn").disabled=active;$("#actionTouch").textContent=active?"收竿":"互动";
+    }
+    function drawFishing(){
+      const f=state.fishing;if(!f||f.map!==state.map)return;
+      const now=Date.now(),phase=fishingPhase(now),sx=state.x+17,sy=state.y+10;
+      ctx.strokeStyle="#6c5540";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(sx+(f.x-sx)*.35,sy-20);ctx.stroke();
+      ctx.strokeStyle="#f2edd5";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(sx+(f.x-sx)*.35,sy-20);ctx.lineTo(f.x,f.y+(phase==="bite"?6:0));ctx.stroke();
+      const sink=phase==="bite"?7:Math.sin(now/240)*2;
+      box(ctx,f.x-3,f.y-9+sink,6,6,"#d96d58");box(ctx,f.x-3,f.y-3+sink,6,5,"#fff0c4");
+      if(phase==="approaching"){
+        const progress=(now-f.bubblesAt)/FISHING.approach;
+        const bx=f.x+(1-progress)*((f.bubbleX??f.x+20)-f.x),by=f.y+(1-progress)*((f.bubbleY??f.y)-f.y);
+        for(let i=0;i<3;i++){ctx.strokeStyle="#d6f2df";ctx.beginPath();ctx.arc(bx+i*5,by+i%2*5,2+(i%2),0,Math.PI*2);ctx.stroke()}
+      }
+      if(phase==="bite"){ctx.strokeStyle="#d8f6ed";ctx.beginPath();ctx.ellipse(f.x,f.y+5,10+Math.sin(now/70)*3,5,0,0,Math.PI*2);ctx.stroke()}
     }
     function champion(){if(state.champion)return toast("冠军向你致意：继续探索吧！");const enemy=makeDragon("光",Math.max(8,Math.min(14,6+state.wins)));startBattle(enemy,true)}
     function encounter(w){
@@ -203,7 +331,34 @@
         "<p>Lv."+d.level+" · "+d.type+"属性。它安静地看着你。</p><p>普通鱼 "+state.bag.fish+" · 高级鱼 "+state.bag.rareFish+"</p>";
       show("encounterOverlay");
     }
-    function tame(kind){const item=kind==="rare"?"rareFish":"fish";if(state.bag[item]<=0)return toast("这种鱼已经用完了");state.bag[item]--;const d=activeWild.dragon,base=kind==="rare"?.72:.42,chance=Math.max(.16,base-d.level*.025);if(Math.random()<chance){hide("encounterOverlay");activeWild.active=false;(state.team.length<3?state.team:state.park).push(d);log(`成功驯服${dragonName(d)}，${state.team.includes(d)?"加入队伍":"送往龙园"}`);save(false);toast("驯服成功！")}else{hide("encounterOverlay");toast("驯服失败，野生龙先攻！");startBattle(d,false,true)}}
+    function tameChance(d,kind){
+      const base=kind==="rare"?.72:.42,rarity=["光","暗"].includes(d.type)?.08:0;
+      const strength=1+d.level*.06+(d.form||0)*.15+rarity*3;
+      return Math.min(.95,base/strength+(1-d.hp/d.maxHp)*.4);
+    }
+    function captureWild(d){
+      if(!activeWild||!activeWild.active||d.hp<=0)return;
+      activeWild.active=false;hide("encounterOverlay");hide("battleOverlay");battle=null;activeWild=null;
+      (state.team.length<3?state.team:state.park).push(d);
+      log(`成功驯服${dragonName(d)}，${state.team.includes(d)?"加入队伍":"送往龙园"}`);
+      maintainWilds();save(false);renderUI();toast("驯服成功！");
+    }
+    function tame(kind){
+      if(battle||!activeWild?.active||activeWild.dragon.hp<=0)return;
+      const item=kind==="rare"?"rareFish":"fish",d=activeWild.dragon;
+      if(state.bag[item]<=0)return toast("这种鱼已经用完了");
+      state.bag[item]--;save(false);renderUI();
+      if(Math.random()<tameChance(d,kind))captureWild(d);
+      else{hide("encounterOverlay");toast("驯服失败，野生龙先攻！");startBattle(d,false,true)}
+    }
+    function useBattleFish(kind){
+      if(!battle||battle.busy||battle.isChampion||battle.enemy.hp<=0||!activeWild?.active)return;
+      const item=kind==="rare"?"rareFish":"fish";
+      if(state.bag[item]<=0)return;
+      battle.busy=true;state.bag[item]--;save(false);renderUI();
+      if(Math.random()<tameChance(battle.enemy,kind)){captureWild(battle.enemy);return}
+      battleLog("驯服失败！野生龙准备反击。");renderBattle();enemyTurn();
+    }
     function startBattle(enemy,isChampion=false,ambush=false){if(!state.team.some(d=>d.hp>0)){toast("队伍需要先治疗");return}battle={enemy,isChampion,active:Math.max(0,state.team.findIndex(d=>d.hp>0)),participants:new Set(),enemyMods:{atk:0,def:0,spd:0},playerMods:{atk:0,def:0,spd:0},busy:ambush};battle.participants.add(state.team[battle.active].id);$("#battleTitle").textContent=isChampion?"最终冠军战":"野生龙对战";$("#battleLog").innerHTML="";show("battleOverlay");battleLog(`${dragonName(enemy)}出现了！`);renderBattle();if(ambush)setTimeout(()=>enemyTurn(true),450)}
     function fighterHTML(d,enemy=false){
       return '<b>'+(enemy?"野生 ":"")+dragonName(d)+' · Lv.'+d.level+'</b><div class="hpbar"><div class="hpfill" style="width:'+Math.max(0,d.hp/d.maxHp*100)+'%"></div></div><small>HP '+d.hp+' / '+d.maxHp+'</small>';
@@ -218,21 +373,22 @@
     }
     function battleLog(msg){const el=$("#battleLog");el.innerHTML+=`<div>› ${msg}</div>`;el.scrollTop=el.scrollHeight}
     function damage(attacker,defender,power,aMods,dMods){const raw=(power*.42+attacker.atk+aMods.atk*.5)-(defender.def+dMods.def)*.55;return Math.max(1,Math.round(raw*(.9+Math.random()*.2)))}
-    function useMove(side,move){const attacker=side==="player"?state.team[battle.active]:battle.enemy, defender=side==="player"?battle.enemy:state.team[battle.active],am=side==="player"?battle.playerMods:battle.enemyMods,dm=side==="player"?battle.enemyMods:battle.playerMods;const [name,power]=move;if(power===0){if(name.includes("回复")||name.includes("治愈")){const heal=name.includes("60")?60:50;attacker.hp=Math.min(attacker.maxHp,attacker.hp+heal);battleLog(`${dragonName(attacker)}使用${name}，恢复${heal}HP`)}else{am.def+=20;battleLog(`${dragonName(attacker)}使用${name}，防御提高了`)}return}if((name==="爆炎球"||name==="水炮")&&Math.random()>.9){battleLog(`${name}没有命中！`);return}const hit=damage(attacker,defender,power,am,dm);defender.hp=Math.max(0,defender.hp-hit);battleLog(`${dragonName(attacker)}使用${name}，造成${hit}伤害`);if(name.includes("回复")||name==="圣光波"||name==="古树之怒")attacker.hp=Math.min(attacker.maxHp,attacker.hp+20);if(name.includes("浪涛")||name.includes("腐蚀"))dm.def-=10;if(name.includes("雷鸣")||name.includes("寒霜")||name.includes("重踏"))dm.spd-=10}
-    function chooseMove(move){if(battle.busy)return;battle.busy=true;$("#battleSubmenu").innerHTML="";const p=state.team[battle.active],e=battle.enemy,playerFirst=p.spd+battle.playerMods.spd>=e.spd+battle.enemyMods.spd;const order=playerFirst?[()=>useMove("player",move),()=>enemyAttack()]:[()=>enemyAttack(),()=>useMove("player",move)];runActions(order)}
+    function useMove(side,move){const attacker=side==="player"?state.team[battle.active]:battle.enemy, defender=side==="player"?battle.enemy:state.team[battle.active],am=side==="player"?battle.playerMods:battle.enemyMods,dm=side==="player"?battle.enemyMods:battle.playerMods;const [name,power]=move;if(name==="尖刺反击"){battleLog(`${dragonName(attacker)}竖起尖刺，准备反击！`);return}if(power===0){if(name.includes("回复")||name.includes("治愈")){const heal=name.includes("60")?60:50;attacker.hp=Math.min(attacker.maxHp,attacker.hp+heal);battleLog(`${dragonName(attacker)}使用${name}，恢复${heal}HP`)}else{am.def+=20;battleLog(`${dragonName(attacker)}使用${name}，防御提高了`)}return}if((name==="爆炎球"||name==="水炮")&&Math.random()>.9){battleLog(`${name}没有命中！`);return}const hit=damage(attacker,defender,power,am,dm);defender.hp=Math.max(0,defender.hp-hit);if(dm.counter){const reflected=Math.max(1,Math.round(hit*.3));attacker.hp=Math.max(0,attacker.hp-reflected);battleLog(`尖刺反击造成${reflected}伤害`)}battleLog(`${dragonName(attacker)}使用${name}，造成${hit}伤害`);if(name.includes("回复")||name==="圣光波"||name==="古树之怒")attacker.hp=Math.min(attacker.maxHp,attacker.hp+20);if(name.includes("浪涛")||name.includes("腐蚀"))dm.def-=10;if(name.includes("雷鸣")||name.includes("寒霜")||name.includes("重踏"))dm.spd-=10}
+    function clearTurnGuard(){if(!battle)return;for(const mods of [battle.playerMods,battle.enemyMods]){mods.def-=mods.thornDefense||0;mods.thornDefense=0;mods.counter=false}}
+    function chooseMove(move){if(battle.busy)return;clearTurnGuard();if(move[0]==="尖刺反击"){battle.playerMods.thornDefense=24;battle.playerMods.def+=24;battle.playerMods.counter=true;}battle.busy=true;$("#battleSubmenu").innerHTML="";const p=state.team[battle.active],e=battle.enemy,playerFirst=p.spd+battle.playerMods.spd>=e.spd+battle.enemyMods.spd;const order=playerFirst?[()=>useMove("player",move),()=>enemyAttack()]:[()=>enemyAttack(),()=>useMove("player",move)];runActions(order)}
     function enemyAttack(){if(battle.enemy.hp<=0)return;const moves=battle.enemy.moves,move=moves[Math.floor(Math.random()*moves.length)];useMove("enemy",move)}
-    function runActions(actions,index=0){if(!battle)return;if(checkBattleEnd())return;if(index>=actions.length){battle.busy=false;renderBattle();return}actions[index]();renderBattle();setTimeout(()=>{if(checkBattleEnd())return;runActions(actions,index+1)},550)}
-    function enemyTurn(ambush=false){if(!battle)return;battle.busy=true;enemyAttack();renderBattle();setTimeout(()=>{if(!checkBattleEnd()){battle.busy=false;renderBattle()}},550)}
+    function runActions(actions,index=0){if(!battle)return;if(checkBattleEnd()){clearTurnGuard();return}if(index>=actions.length){clearTurnGuard();battle.busy=false;renderBattle();return}actions[index]();renderBattle();setTimeout(()=>{if(checkBattleEnd()){clearTurnGuard();return}runActions(actions,index+1)},550)}
+    function enemyTurn(ambush=false){if(!battle)return;clearTurnGuard();battle.busy=true;enemyAttack();renderBattle();setTimeout(()=>{if(!checkBattleEnd()){battle.busy=false;renderBattle()}},550)}
     function checkBattleEnd(){if(!battle)return true;if(battle.enemy.hp<=0){winBattle();return true}const p=state.team[battle.active];if(p.hp<=0){battleLog(`${dragonName(p)}失去战斗能力`);const next=state.team.findIndex(d=>d.hp>0);if(next<0){loseBattle();return true}battle.active=next;battle.participants.add(state.team[next].id);battle.busy=false;renderBattle();battleLog(`${dragonName(state.team[next])}上场！`);return true}return false}
-    function winBattle(){const wasChampion=battle.isChampion,enemy=battle.enemy;const reward=wasChampion?500:35+enemy.level*12;state.coins+=reward;if(!wasChampion)state.wins++;for(const id of battle.participants){const d=state.team.find(x=>x.id===id);if(d)gainExp(d,20+enemy.level*10)}if(activeWild)activeWild.active=false;hide("battleOverlay");battle=null;activeWild=null;if(wasChampion){state.champion=true;log("击败最终冠军，你成为新的驯龙冠军！");openService("你成为新的驯龙冠军！","<p class='egg'>🏆🐉</p><p>全场为你欢呼。你仍然可以继续探索龙栖谷、收集龙蛋并培养伙伴。</p>")}else{log(`赢得野外战斗，获得${reward}金币`);toast("战斗胜利！")}save(false);renderUI()}
+    function winBattle(){const wasChampion=battle.isChampion,enemy=battle.enemy;const reward=wasChampion?500:35+enemy.level*12;state.coins+=reward;if(!wasChampion)state.wins++;for(const id of battle.participants){const d=state.team.find(x=>x.id===id);if(d)gainExp(d,20+enemy.level*10)}if(activeWild)activeWild.active=false;hide("battleOverlay");battle=null;activeWild=null;if(wasChampion){state.champion=true;log("击败最终冠军，你成为新的驯龙冠军！");openService("你成为新的驯龙冠军！","<p class='egg'>🏆🐉</p><p>全场为你欢呼。你仍然可以继续探索龙栖谷、收集龙蛋并培养伙伴。</p>")}else{log(`赢得野外战斗，获得${reward}金币`);toast("战斗胜利！")}maintainWilds();save(false);renderUI()}
     function loseBattle(){const lost=Math.min(state.coins,50);state.coins-=lost;state.team.forEach(d=>d.hp=d.maxHp);hide("battleOverlay");battle=null;activeWild=null;setMap("lab",350,350);log(`战斗失败，博士治好了伙伴，损失${lost}金币`);save(false)}
-    function gainExp(d,amount){d.exp+=amount;while(d.level<30&&d.exp>=d.level*24){d.exp-=d.level*24;d.level++;d.maxHp+=7;d.hp+=7;d.atk+=2;d.def+=2;d.spd+=2;const old=d.form;d.form=d.level>=20?2:d.level>=10?1:0;log(`${dragonName(d)}升到Lv.${d.level}${d.form>old?"并进化了！":""}`);const idx=LEARN.indexOf(d.level);if(idx>=0)learnMove(d,TYPES[d.type].moves[idx])}}
+    function gainExp(d,amount){d.exp+=amount;while(d.level<30&&d.exp>=d.level*24){d.exp-=d.level*24;d.level++;d.maxHp+=7;d.hp+=7;d.atk+=2;d.def+=2;d.spd+=2;const old=d.form;d.form=d.level>=20?2:d.level>=10?1:0;log(`${dragonName(d)}升到Lv.${d.level}${d.form>old?"并进化了！":""}`);const idx=LEARN.indexOf(d.level);if(idx>=0)learnMove(d,dragonData(d).moves[idx])}}
     function learnMove(d,move){if(d.moves.some(m=>m[0]===move[0]))return;if(d.moves.length<4){d.moves.push(move);log(`${dragonName(d)}学会${move[0]}`);return}$("#learnText").textContent=`${dragonName(d)}想学习“${move[0]}”，请选择替换一个旧招式，或放弃学习。`;$("#learnChoices").innerHTML=d.moves.map((m,i)=>`<button class="choice" data-replace="${i}"><strong>${m[0]}</strong><small>威力 ${m[1]||"变化"}</small></button>`).join("")+`<button class="choice" data-replace="no"><strong>放弃学习</strong></button>`;$("#learnOverlay").dataset.dragon=d.id;$("#learnOverlay").dataset.move=JSON.stringify(move);show("learnOverlay")}
     function switchMenu(){const choices=state.team.map((d,i)=>`<button class="pixel-btn move-btn" data-switch="${i}" ${i===battle.active||d.hp<=0?"disabled":""}>${TYPES[d.type].icon} ${dragonName(d)}<br>HP ${d.hp}/${d.maxHp}</button>`).join("");$("#battleSubmenu").innerHTML=choices+`<button class="pixel-btn" data-back="1">返回</button>`}
     function switchDragon(i){if(battle.busy)return;const current=state.team[battle.active],enemy=battle.enemy,enemyFirst=enemy.spd+battle.enemyMods.spd>current.spd+battle.playerMods.spd;battle.busy=true;const swap=()=>{battle.active=i;battle.participants.add(state.team[i].id);battleLog(`换上${dragonName(state.team[i])}`)};runActions(enemyFirst?[()=>enemyAttack(),swap]:[swap,()=>enemyAttack()])}
-    function bagMenu(){$("#battleSubmenu").innerHTML=`<button class="pixel-btn move-btn" data-potion="1" ${state.bag.potion<=0?"disabled":""}>🧪 回血药 ×${state.bag.potion}<br>恢复60 HP</button><button class="pixel-btn" data-back="1">返回</button>`}
+    function bagMenu(){$("#battleSubmenu").innerHTML=`<button class="pixel-btn move-btn" data-potion="1" ${state.bag.potion<=0?"disabled":""}>🧪 回血药 ×${state.bag.potion}<br>恢复60 HP</button>`+(battle.isChampion?"":`<button class="pixel-btn move-btn" data-fish="normal" ${state.bag.fish<=0?"disabled":""}>🐟 普通鱼 ×${state.bag.fish}</button><button class="pixel-btn move-btn" data-fish="rare" ${state.bag.rareFish<=0?"disabled":""}>✨ 高级鱼 ×${state.bag.rareFish}</button>`)+`<button class="pixel-btn" data-back="1">返回</button>`}
     function usePotion(){if(battle.busy||state.bag.potion<=0)return;state.bag.potion--;const d=state.team[battle.active];d.hp=Math.min(d.maxHp,d.hp+60);battleLog(`${dragonName(d)}恢复60 HP`);battle.busy=true;runActions([()=>enemyAttack()])}
-    function runAway(){if(battle.isChampion)return toast("冠军战不能逃跑");if(Math.random()<.8){battleLog("成功逃离战斗");setTimeout(()=>{hide("battleOverlay");battle=null;activeWild=null},350)}else{battleLog("逃跑失败！");enemyTurn()}}
+    function runAway(){if(!battle||battle.busy)return;if(battle.isChampion)return toast("冠军战不能逃跑");battle.busy=true;renderBattle();if(Math.random()<.8){battleLog("成功逃离战斗");setTimeout(()=>{hide("battleOverlay");battle=null;activeWild=null},350)}else{battleLog("逃跑失败！");enemyTurn()}}
 
     // All visual assets are cached low-resolution canvases; world coordinates remain unscaled.
     function surface(w,h){const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").imageSmoothingEnabled=false;return c}
@@ -241,8 +397,8 @@
     function shade(hex,amount){const n=parseInt(hex.slice(1),16);return "#"+[n>>16,(n>>8)&255,n&255].map(c=>Math.max(0,Math.min(255,c+amount)).toString(16).padStart(2,"0")).join("")}
     function noise(x,y){const n=Math.sin(x*127.1+y*311.7)*43758.5453;return n-Math.floor(n)}
     const dragonSprites=new Map();
-    function dragonSprite(type,form=0){
-      const key=type+form;if(dragonSprites.has(key))return dragonSprites.get(key);
+    function dragonSprite(type,form=0,species=null){
+      const key=type+form+(species||"");if(dragonSprites.has(key))return dragonSprites.get(key);
       const c=surface(80,80),g=c.getContext("2d"),base=type==="冰"?"#d5edf5":TYPES[type].color,dark=shade(base,-55),light=shade(base,35),outline="#293942",belly=type==="冰"?"#ffffff":"#f7ddb1";
       // Tail, membrane wings, haunches, chest, horns and bright eyes form a readable silhouette.
       poly(g,[[34,57],[22,65],[9,63],[4,55],[5,43],[10,53],[18,55],[29,49]],outline);
@@ -272,11 +428,18 @@
       if(type==="雷"){poly(g,[[29,39],[24,29],[29,30],[27,23],[36,35],[31,34]],"#fff4a1")}
       if(form>0){poly(g,[[17,28],[9,7],[22,18]],light);poly(g,[[47,14],[49,2],[55,12]],belly)}
       if(form>1){poly(g,[[27,48],[18,38],[27,36]],belly);poly(g,[[34,35],[29,23],[39,28]],belly);box(g,51,18,6,3,"#fff4ae")}
+      if(species==="thorn"){
+        for(const [x,y] of [[19,51],[27,44],[31,38],[36,33],[42,20]]){
+          poly(g,[[x,y+7],[x-6-form*2,y-5-form*2],[x+5,y+2]],"#e5dcb0");
+          box(g,x+1,y+3,3,4,"#366c51");
+        }
+        box(g,48,14,7,4,"#d79aaf");box(g,50,12,3,8,"#f0c0aa");
+      }
       dragonSprites.set(key,c);return c;
     }
-    function drawDragon(g,x,y,type,size=48,form=0,flip=false){
+    function drawDragon(g,x,y,type,size=48,form=0,flip=false,species=null){
       g.save();g.translate(Math.round(x),Math.round(y));if(flip){g.translate(size,0);g.scale(-1,1)}
-      g.drawImage(dragonSprite(type,form),0,0,size,size);g.restore();
+      g.drawImage(dragonSprite(type,form,species),0,0,size,size);g.restore();
     }
     function spriteMarkup(type,form=0,cls="dragon-art"){return '<img class="'+cls+'" alt="'+TYPES[type].names[form]+'" src="'+dragonSprite(type,form).toDataURL()+'">'}
     function humanSprite(g,x,y,kind="player",scale=1){
@@ -313,10 +476,83 @@
       treeSprites[variant]=c;return c;
     }
     const riverX=y=>735+Math.sin(y/260)*70,bridgeRows=[560,1104];
-    const roads=[[[344,390],[344,560],[1472,560],[1472,850],[1744,850]],[[1472,560],[1892,560],[1892,334]],[[344,560],[344,1104],[1648,1104],[1648,1280]],[[1472,560],[1472,1104]]];
+    const roads=[[[1648,1104],[2240,1104]],[[344,390],[344,560],[1472,560],[1472,850],[1744,850]],[[1472,560],[1892,560],[1892,334]],[[344,560],[344,1104],[1648,1104],[1648,1280]],[[1472,560],[1472,1104]]];
     function distanceToSegment(x,y,a,b){const dx=b[0]-a[0],dy=b[1]-a[1],t=Math.max(0,Math.min(1,((x-a[0])*dx+(y-a[1])*dy)/(dx*dx+dy*dy)));return Math.hypot(x-a[0]-t*dx,y-a[1]-t*dy)}
     function onRoad(x,y,pad=40){return roads.some(path=>path.slice(1).some((b,i)=>distanceToSegment(x,y,path[i],b)<pad))}
     const scenery=[];
+    const oasis={x:1430,y:650,rx:174,ry:112};
+    const specialCacti=[
+      {id:"west-flower",x:480,y:304,w:32,h:52,kind:"cactus",special:true},
+      {id:"north-ridge",x:1952,y:272,w:32,h:52,kind:"cactus",special:true},
+      {id:"south-dunes",x:1792,y:1184,w:32,h:52,kind:"cactus",special:true}
+    ];
+    const desertRoads=[[[48,704],[560,704],[1008,832],[1510,832],[2144,1120]],[[560,704],[496,384],[496,360]],[[1510,832],[1984,832],[1984,352]],[[1510,832],[1510,1232],[1808,1256]]];
+    const desertScenery=[];
+    let desertGround=null,desertBattleGround=null,desertChestLocations=[];
+    const outdoors=map=>map==="forest"||map==="desert";
+    function waterAt(map,x,y){
+      if(map==="desert")return ((x-oasis.x)/oasis.rx)**2+((y-oasis.y)/oasis.ry)**2<1;
+      return map==="forest"&&Math.abs(x-riverX(y))<49&&!bridgeRows.some(by=>Math.abs(y-by)<35);
+    }
+    function buildDesertScenery(){
+      desertScenery.length=0;
+      for(let y=80;y<1360;y+=96)for(let x=100;x<2220;x+=96){
+        const px=x+Math.floor(noise(x,y)*34),py=y+Math.floor(noise(y,x)*30);
+        if(noise(x+17,y)<.38||desertRoads.some(path=>path.slice(1).some((b,i)=>distanceToSegment(px,py,path[i],b)<78)))continue;
+        if(((px-oasis.x)/(oasis.rx+100))**2+((py-oasis.y)/(oasis.ry+100))**2<1||specialCacti.some(c=>Math.hypot(px-c.x,py-c.y)<115))continue;
+        const kind=noise(px,py)>.28?"cactus":noise(py,px)>.5?"rock":"deadwood";
+        desertScenery.push({x:px,y:py,w:kind==="rock"?40:32,h:kind==="rock"?30:52,kind});
+      }
+      desertScenery.push(...specialCacti);
+    }
+    function desertObstacle(o){return {x:o.x+4,y:o.y+o.h-22,w:o.w-8,h:22}}
+    function safeDesertLocation(x,y){
+      const area={x:x-14,y:y-14,w:52,h:52};
+      return x>100&&y>50&&x<maps.desert.w-80&&y<maps.desert.h-80&&
+        ((x-oasis.x)/(oasis.rx+65))**2+((y-oasis.y)/(oasis.ry+65))**2>1&&
+        !desertScenery.some(o=>rectHit(area,o,18))&&canStand(x,y,"desert");
+    }
+    function drawDesertObject(g,o){
+      const {x,y,w,h}=o;
+      if(o.kind==="rock"){poly(g,[[x,y+h],[x+3,y+10],[x+20,y],[x+w,y+15],[x+w-4,y+h]],"#8a7f83");box(g,x+9,y+8,20,5,"#c0afb0");return}
+      if(o.kind==="deadwood"){box(g,x+14,y+9,7,43,"#786b60");poly(g,[[x+16,y+30],[x+2,y+15],[x+4,y+11],[x+18,y+23],[x+28,y+8],[x+31,y+12],[x+21,y+34]],"#91806b");return}
+      box(g,x+3,y+h-4,29,7,"#92784c55");box(g,x+11,y+4,15,h-4,"#365d50");
+      box(g,x+13,y+6,10,h-8,"#619568");box(g,x+16,y+8,3,h-12,"#91b976");
+      box(g,x+1,y+18,7,21,"#44755a");box(g,x+6,y+32,10,7,"#44755a");
+      box(g,x+26,y+10,6,20,"#507f5d");box(g,x+22,y+24,7,6,"#507f5d");
+      for(let i=0;i<4;i++){box(g,x+12,y+13+i*9,3,1,"#c8cd9b");box(g,x+24,y+17+i*8,2,1,"#d3d4a6")}
+      if(o.special||noise(x,y)>.86){box(g,x+15,y+1,7,4,"#ca8290");box(g,x+17,y,3,6,"#e7ac9d")}
+    }
+    function buildDesert(){
+      desertGround=surface(maps.desert.w,maps.desert.h);const g=desertGround.getContext("2d");
+      for(let y=0;y<maps.desert.h;y+=TILE)for(let x=0;x<maps.desert.w;x+=TILE){
+        const n=noise(x,y);box(g,x,y,TILE,TILE,["#d6bd83","#d9c38f","#dcca9b","#d3b982"][Math.floor(n*4)]);
+        if(n>.55){box(g,x+2,y+6,9,1,"#b7a276");box(g,x+5,y+8,7,1,"#ead8aa")}
+      }
+      desertRoads.forEach(path=>{g.beginPath();path.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));g.lineWidth=42;g.strokeStyle="#c1ab7d";g.lineJoin="round";g.stroke()});
+      for(let y=oasis.y-oasis.ry-32;y<=oasis.y+oasis.ry+32;y+=8)for(let x=oasis.x-oasis.rx-32;x<=oasis.x+oasis.rx+32;x+=8){
+        const n=((x-oasis.x)/oasis.rx)**2+((y-oasis.y)/oasis.ry)**2;
+        if(n<1.28)box(g,x,y,8,8,n<.72?"#358a9e":n<1?"#5badb5":"#87a875");
+        if(n<.8&&noise(x,y)>.83)box(g,x,y,6,2,"#98d6cf");
+      }
+      label(g,"← 翡翠森林",132,652);label(g,"绿洲",1430,502);
+      desertBattleGround=surface(768,330);const b=desertBattleGround.getContext("2d");
+      box(b,0,0,768,330,"#e0ca97");box(b,0,0,768,110,"#a5c8cb");
+      poly(b,[[0,135],[140,62],[340,140],[524,83],[768,130],[768,210],[0,210]],"#b8a080");
+      for(let i=0;i<8;i++)drawDesertObject(b,{x:i*109,y:116+i%2*12,w:32,h:52,kind:"cactus"});
+      for(let x=0;x<768;x+=16)box(b,x,265+noise(x,0)*35,10,2,"#c0ac80");
+    }
+    function collectSpine(cactus){
+      if(state.map!=="desert"||!specialCacti.includes(cactus)||!near(cactus,26))return;
+      const q=state.thornQuest;
+      if(q.completed||q.visited.includes(cactus.id))return toast("这棵仙人掌静静地立在沙地上。");
+      q.visited.push(cactus.id);q.spines=q.visited.length;
+      if(q.spines<3){save(false);return toast(q.spines===1?"你从仙人掌上发现了一根奇怪的刺……":"这根刺好像和之前找到的一样。")}
+      // Commit the unique reward before displaying its animation.
+      q.spines=0;q.eggCreated=true;q.completed=true;state.eggs.push("thorn");save(false);
+      log("三根仙人掌刺合成了一颗刺龙蛋");
+      openService("奇异的光",'<div class="synthesis"><span class="egg">✧</span><p>三根仙人掌刺突然发出了奇异的光……</p><p>它们竟然合成了一颗从未见过的龙蛋！</p><strong>刺龙蛋 ×1</strong></div>');
+    }
     function buildScenery(){
       for(let y=48;y<1400;y+=66)for(let x=40;x<2270;x+=64){
         const px=x+Math.floor(noise(x,y)*35),py=y+Math.floor(noise(y,x)*30);
@@ -335,37 +571,41 @@
       const buildings=[{x:246,y:213,w:195,h:190},{x:1785,y:160,w:225,h:190},{x:1615,y:690,w:230,h:153}];
       if(buildings.some(b=>rectHit(area,b,24))||scenery.some(o=>rectHit(area,o,8)))return false;
       if([maps.forest.lab,maps.forest.arena,maps.forest.cave].some(p=>rectHit(area,p,64)))return false;
-      if(wilds.some(w=>Math.hypot(x+16-w.x,y+14-w.y)<76))return false;
       for(let row=0;row<=28;row+=7){const bank=riverX(y+row);if(x+32>bank-70&&x<bank+70)return false}
       return canStand(x,y,"forest");
     }
-    function buildChestLocations(){
-      chestLocations=[];
-      const cols=maps.forest.w/TILE,rows=maps.forest.h/TILE,visited=new Uint8Array(cols*rows);
-      const queue=[26*cols+21];visited[queue[0]]=1;
-      // Flood-fill from the cabin exit with swept movement checks, proving each candidate is reachable.
+    function reachableLocations(map,startX,startY,safe){
+      const locations=[],cols=maps[map].w/TILE,rows=maps[map].h/TILE,visited=new Uint8Array(cols*rows);
+      const queue=[Math.round(startY/TILE)*cols+Math.round(startX/TILE)];visited[queue[0]]=1;
+      const portals=map==="forest"?[maps.forest.lab,maps.forest.arena]:[];
       for(let head=0;head<queue.length;head++){
         const id=queue[head],gx=id%cols,gy=Math.floor(id/cols),x=gx*TILE,y=gy*TILE;
-        if(safeChestLocation(x,y))chestLocations.push({x,y});
+        if(safe(x,y))locations.push({x,y});
         for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
-          const nx=gx+dx,ny=gy+dy;
-          if(nx<1||ny<1||nx>=cols-2||ny>=rows-2)continue;
+          const nx=gx+dx,ny=gy+dy;if(nx<1||ny<1||nx>=cols-2||ny>=rows-2)continue;
           const next=ny*cols+nx;if(visited[next])continue;
           let pass=true;
           for(let step=1;step<=4;step++){
             const px=x+dx*TILE*step/4,py=y+dy*TILE*step/4;
-            if(!canStand(px,py,"forest")||[maps.forest.lab,maps.forest.arena].some(portal=>rectHit({x:px,y:py,w:20,h:28},portal))){pass=false;break}
+            if(!canStand(px,py,map)||portals.some(p=>rectHit({x:px,y:py,w:20,h:28},p))){pass=false;break}
           }
           if(pass){visited[next]=1;queue.push(next)}
         }
       }
+      return locations;
+    }
+    function buildChestLocations(){
+      chestLocations=reachableLocations("forest",336,416,safeChestLocation);
+      desertChestLocations=reachableLocations("desert",96,704,safeDesertLocation);
+      desertWildLocations=desertChestLocations;
     }
     function updateWorldRewards(now=Date.now()){
       const chest=state.randomChest;
       if(chest.active||now<chest.nextSpawnAt||!chestLocations.length)return;
-      const candidates=chest.lastPosition?chestLocations.filter(p=>Math.hypot(p.x-chest.lastPosition.x,p.y-chest.lastPosition.y)>64):chestLocations;
+      const locations=[...chestLocations.map(p=>({...p,map:"forest"})),...desertChestLocations.map(p=>({...p,map:"desert"}))];
+      const candidates=locations.filter(p=>(!chest.lastPosition||p.map!==(chest.lastPosition.map||"forest")||Math.hypot(p.x-chest.lastPosition.x,p.y-chest.lastPosition.y)>64)&&!wilds.some(w=>w.active&&w.map===p.map&&Math.hypot(p.x-w.x,p.y-w.y)<100));
       if(!candidates.length)return;
-      chest.position={...candidates[Math.floor(Math.random()*candidates.length)]};chest.active=true;
+      const point=candidates[Math.floor(Math.random()*candidates.length)];chest.map=point.map;chest.position={x:point.x,y:point.y};chest.active=true;
       save(false);
     }
     function label(g,text,x,y){
@@ -477,21 +717,21 @@
       const c=$("#battleStage");if(!c||!battle)return;
       const compact=window.innerWidth<600;c.height=compact?440:330;
       const g=c.getContext("2d");g.imageSmoothingEnabled=false;g.clearRect(0,0,c.width,c.height);
-      g.drawImage(battleGround,0,0,c.width,c.height);const p=state.team[battle.active],e=battle.enemy;
+      g.drawImage(state.map==="desert"?desertBattleGround:battleGround,0,0,c.width,c.height);const p=state.team[battle.active],e=battle.enemy;
       box(g,111,compact?400:291,181,9,"#334a3a44");box(g,491,compact?366:246,140,7,"#334a3a44");
-      drawDragon(g,64,compact?190:82,p.type,248,p.form);drawDragon(g,455,compact?196:76,e.type,207,e.form,true);
+      drawDragon(g,64,compact?190:82,p.type,248,p.form,false,p.species);drawDragon(g,455,compact?196:76,e.type,207,e.form,true,e.species);
     }
     function drawLab(){ctx.drawImage(labGround,0,0);humanSprite(ctx,372,185,"doctor",1.4)}
     function drawArena(){ctx.drawImage(arenaGround,0,0);humanSprite(ctx,372,127,"champion",1.4)}
     function drawForest(){
-      ctx.drawImage(forestGround,0,0);
+      const desert=state.map==="desert";ctx.drawImage(desert?desertGround:forestGround,0,0);
       const treasure=chestRect();
       if(treasure){const {x,y}=treasure;box(ctx,x+1,y+7,30,20,"#664832");box(ctx,x+2,y+1,28,13,"#b48a4e");box(ctx,x+6,y+2,3,24,"#e3c478");box(ctx,x+23,y+2,3,24,"#e3c478");box(ctx,x+14,y+11,6,6,"#e7cc7d")}
-      const actors=scenery.filter(o=>o.x+o.w>camera.x-8&&o.x<camera.x+768&&o.y+o.h>camera.y&&o.y<camera.y+480).map(o=>({y:o.y+o.h,draw:()=>{if(o.kind==="tree")ctx.drawImage(treeSprite(o.variant),o.x,o.y);else{poly(ctx,[[o.x,o.y+20],[o.x+5,o.y+5],[o.x+24,o.y],[o.x+34,o.y+17],[o.x+30,o.y+24]],"#69776c");box(ctx,o.x+8,o.y+6,16,5,"#a5ad93")}}}));
-      wilds.filter(w=>w.active).forEach(w=>actors.push({y:w.y+32,draw:()=>drawDragon(ctx,w.x-14,w.y-14,w.type,52)}));
-      if(state.team.length)actors.push({y:follower.y+22,draw:()=>drawDragon(ctx,follower.x-12,follower.y-20,state.team[0].type,50,state.team[0].form,facing<0)});
+      const actors=(desert?desertScenery:scenery).filter(o=>o.x+o.w>camera.x-8&&o.x<camera.x+768&&o.y+o.h>camera.y&&o.y<camera.y+480).map(o=>({y:o.y+o.h,draw:()=>{if(desert)drawDesertObject(ctx,o);else if(o.kind==="tree")ctx.drawImage(treeSprite(o.variant),o.x,o.y);else{poly(ctx,[[o.x,o.y+20],[o.x+5,o.y+5],[o.x+24,o.y],[o.x+34,o.y+17],[o.x+30,o.y+24]],"#69776c");box(ctx,o.x+8,o.y+6,16,5,"#a5ad93")}}}));
+      wilds.filter(w=>w.active&&w.map===state.map).forEach(w=>actors.push({y:w.y+32,draw:()=>drawDragon(ctx,w.x-14,w.y-14,w.type,52)}));
+      if(state.team.length)actors.push({y:follower.y+22,draw:()=>drawDragon(ctx,follower.x-12,follower.y-20,state.team[0].type,50,state.team[0].form,facing<0,state.team[0].species)});
       actors.push({y:state.y+28,draw:()=>drawPlayer()});actors.sort((a,b)=>a.y-b.y).forEach(a=>a.draw());
-      label(ctx,"森林深处 →",1450,635);label(ctx,"← 博士的小屋",485,615);label(ctx,"↑ 竞技场",1920,595);
+      if(!desert){label(ctx,"森林深处 →",1450,635);label(ctx,"← 博士的小屋",485,615);label(ctx,"↑ 竞技场",1920,595);label(ctx,"沙漠 →",2190,1040)}
     }
     function drawPlayer(){humanSprite(ctx,state.x,state.y)}
     function updateCamera(){const m=maps[state.map];camera.x=Math.round(Math.max(0,Math.min(m.w-768,state.x+12-384)));camera.y=Math.round(Math.max(0,Math.min(m.h-480,state.y+14-240)))}
@@ -508,12 +748,17 @@
     }
     function draw(){
       ctx.clearRect(0,0,768,480);updateCamera();ctx.save();ctx.translate(-camera.x,-camera.y);
-      if(state.map==="lab")drawLab();else if(state.map==="forest")drawForest();else drawArena();
-      if(state.map!=="forest"){if(state.team.length)drawDragon(ctx,follower.x-12,follower.y-20,state.team[0].type,50,state.team[0].form,facing<0);drawPlayer()}
-      ctx.restore();drawHatch();requestAnimationFrame(draw);
+      if(state.map==="lab")drawLab();else if(outdoors(state.map))drawForest();else drawArena();
+      if(!outdoors(state.map)){if(state.team.length)drawDragon(ctx,follower.x-12,follower.y-20,state.team[0].type,50,state.team[0].form,facing<0,state.team[0].species);drawPlayer()}
+      drawFishing();ctx.restore();drawHatch();requestAnimationFrame(draw);
     }
     function canStand(x,y,mapName=state.map){
-      const m=maps[mapName];if(x<16||y<72&&mapName!=="forest"||y<16||x>m.w-36||y>m.h-38)return false;
+      const m=maps[mapName];if(x<16||y<72&&!outdoors(mapName)||y<16||x>m.w-36||y>m.h-38)return false;
+      if(mapName==="desert"){
+        const area={x:x+4,y:y+14,w:16,h:14};
+        if(waterAt(mapName,x+12,y+25))return false;
+        return !desertScenery.some(o=>rectHit(area,desertObstacle(o)));
+      }
       if(mapName!=="forest")return true;
       const px=x+12,py=y+25;
       if(Math.abs(px-riverX(py))<57&&!bridgeRows.some(by=>Math.abs(py-by)<27))return false;
@@ -525,14 +770,16 @@
     function updateNearby(){
       const m=maps[state.map];let text="";
       if(state.map==="forest"){
-        if(near(m.lab))text="博士的小屋 · 进入";else if(near(m.cave))text="洞穴 · 探索";else if(near(m.arena))text="竞技场大门 · 进入";else if(chestRect()&&near(chestRect()))text="宝箱 · 打开";else text=state.x<riverX(state.y)?"博士的小屋 ← · 河桥 →":"洞穴 ↓ · 竞技场 ↑";
+        if(near(m.desert))text="沙漠 · 进入";else if(near(m.lab))text="博士的小屋 · 进入";else if(near(m.cave))text="洞穴 · 探索";else if(near(m.arena))text="竞技场大门 · 进入";else if(chestRect()&&near(chestRect()))text="宝箱 · 打开";else text=state.x<riverX(state.y)?"博士的小屋 ← · 河桥 →":"洞穴 ↓ · 竞技场 ↑";
+      }else if(state.map==="desert"){
+        text=near(m.exit)?"翡翠森林 · 返回":chestRect()&&near(chestRect())?"宝箱 · 打开":desertScenery.some(c=>c.kind==="cactus"&&near(c,26))?"仙人掌 · 查看":"琥珀沙漠";
       }else if(state.map==="lab"){
         if(near(m.doctor))text="博士 · 交谈";else if(near(m.hatch))text="孵蛋台 · 孵化";else if(near(m.shop))text="商店 · 购买";else if(near(m.park))text="龙园 · 队伍";else if(near(m.door))text="翡翠森林 · 出门";else text="博士的小屋";
       }else text=near(m.champ)?"冠军 · 挑战":"冠军竞技场";
       $("#hint").textContent=text;
     }
     function move(dt){
-      if(modalOpen)return;
+      if(modalOpen||state.fishing)return;
       let dx=(keys.right?1:0)-(keys.left?1:0),dy=(keys.down?1:0)-(keys.up?1:0);
       if(!dx&&!dy){updateNearby();return}
       if(dx)facing=dx;const len=Math.hypot(dx,dy),speed=150;
@@ -545,18 +792,20 @@
       if(performance.now()>portalCooldown){
         if(state.map==="lab"&&near(m.door,0))return setMap("forest",335,416);
         if(state.map==="arena"&&near(m.exit,0))return setMap("forest",1882,358);
+        if(state.map==="forest"&&near(m.desert,0))return setMap("desert",96,704);
+        if(state.map==="desert"&&near(m.exit,0))return setMap("forest",2160,1090);
         if(state.map==="forest"&&near(m.lab,0))return setMap("lab",374,386);
         if(state.map==="forest"&&near(m.arena,0)){portalCooldown=performance.now()+1600;enterArena();return}
       }
-      if(state.map==="forest"){
+      if(outdoors(state.map)){
         if(ignoredWild!==null){const previous=wilds.find(w=>w.id===ignoredWild);if(!previous||Math.hypot(state.x-previous.x,state.y-previous.y)>78)ignoredWild=null}
-        for(const w of wilds)if(w.active&&w.id!==ignoredWild&&Math.hypot(state.x-w.x,state.y-w.y)<43){encounter(w);break}
+        for(const w of wilds)if(w.active&&w.map===state.map&&w.id!==ignoredWild&&Math.hypot(state.x-w.x,state.y-w.y)<43){encounter(w);break}
       }
     }
-    function loop(t){const dt=Math.min(.04,(t-last)/1000||0);last=t;updateWorldRewards();move(dt);requestAnimationFrame(loop)}
+    function loop(t){const dt=Math.min(.04,(t-last)/1000||0);last=t;maintainWilds();updateWorldRewards();updateFishingUI();move(dt);requestAnimationFrame(loop)}
     function initNew(gender){
       if(!["男","女"].includes(gender))return;
-      state=fresh();state.gender=gender;state.intro="choose";hide("startOverlay");
+      state=fresh();selectedRod=null;state.gender=gender;state.intro="choose";hide("startOverlay");
       save(false);renderUI();showStarter();
     }
     function showStarter(){
@@ -595,9 +844,25 @@
     $$("[data-gender]").forEach(b=>b.onclick=()=>initNew(b.dataset.gender));$("#starterChoices").onclick=e=>{const b=e.target.closest("[data-starter]");if(b)finishStarter(b.dataset.starter)};
     $("#encounterOverlay").onclick=e=>{const b=e.target.closest("[data-encounter]");if(!b)return;const a=b.dataset.encounter;if(a==="leave"){hide("encounterOverlay");activeWild=null}else if(a==="battle"){const d=activeWild.dragon;hide("encounterOverlay");startBattle(d)}else tame(a)};
     $("#battleMenu").onclick=e=>{const b=e.target.closest("[data-battle]");if(!b||!battle||battle.busy)return;const a=b.dataset.battle;if(a==="moves"){$("#battleSubmenu").innerHTML=state.team[battle.active].moves.map((m,i)=>`<button class="pixel-btn move-btn" data-move="${i}">${m[0]}<br><small>威力 ${m[1]||"变化"}</small></button>`).join("")+`<button class="pixel-btn" data-back="1">返回</button>`}if(a==="switch")switchMenu();if(a==="bag")bagMenu();if(a==="run")runAway()};
-    $("#battleSubmenu").onclick=e=>{const b=e.target.closest("button");if(!b)return;if(b.dataset.move!==undefined)chooseMove(state.team[battle.active].moves[+b.dataset.move]);if(b.dataset.switch!==undefined)switchDragon(+b.dataset.switch);if(b.dataset.potion)usePotion();if(b.dataset.back)renderBattle()};
-    $("#serviceClose").onclick=()=>hide("serviceOverlay");$("#serviceBody").onclick=e=>{const buy=e.target.closest("[data-buy]"),svc=e.target.closest("[data-service]"),tr=e.target.closest("[data-transfer]");if(buy){const price=+buy.dataset.price;if(state.coins<price)return toast("金币不够");state.coins-=price;state.bag[buy.dataset.buy]++;shop();renderUI();save(false)}if(svc){if(svc.dataset.service==="heal"){[...state.team,...state.park].forEach(d=>d.hp=d.maxHp);log("博士治好了所有龙伙伴");doctor();save(false)}if(svc.dataset.service==="hatch"){if(!state.eggs.length)return toast("没有龙蛋");const d=makeDragon(state.eggs.shift());(state.team.length<3?state.team:state.park).push(d);log(`孵化出${dragonName(d)}`);doctor();save(false)}if(svc.dataset.service==="park")park()}if(tr){const id=+tr.dataset.transfer;if(tr.dataset.from==="team"){if(state.team.length<=1)return toast("队伍至少保留1条龙");const i=state.team.findIndex(d=>d.id===id);state.park.push(state.team.splice(i,1)[0])}else{if(state.team.length>=3)return toast("队伍最多3条龙");const i=state.park.findIndex(d=>d.id===id);state.team.push(state.park.splice(i,1)[0])}park();save(false)}};
+    $("#battleSubmenu").onclick=e=>{const b=e.target.closest("button");if(!b||b.disabled||!battle||battle.busy)return;if(b.dataset.move!==undefined)chooseMove(state.team[battle.active].moves[+b.dataset.move]);if(b.dataset.switch!==undefined)switchDragon(+b.dataset.switch);if(b.dataset.potion)usePotion();if(b.dataset.fish)useBattleFish(b.dataset.fish);if(b.dataset.back)renderBattle()};
+    $("#serviceClose").onclick=()=>hide("serviceOverlay");$("#serviceBody").onclick=e=>{const buy=e.target.closest("[data-buy]"),svc=e.target.closest("[data-service]"),tr=e.target.closest("[data-transfer]");if(buy){buyItem(buy.dataset.buy)}if(svc){if(svc.dataset.service==="heal"){[...state.team,...state.park].forEach(d=>d.hp=d.maxHp);log("博士治好了所有龙伙伴");doctor();save(false)}if(svc.dataset.service==="hatch"){if(!state.eggs.length)return toast("没有龙蛋");const d=makeDragon(state.eggs.shift());(state.team.length<3?state.team:state.park).push(d);log(`孵化出${dragonName(d)}`);doctor();save(false)}if(svc.dataset.service==="park")park()}if(tr){const id=+tr.dataset.transfer;if(tr.dataset.from==="team"){if(state.team.length<=1)return toast("队伍至少保留1条龙");const i=state.team.findIndex(d=>d.id===id);state.park.push(state.team.splice(i,1)[0])}else{if(state.team.length>=3)return toast("队伍最多3条龙");const i=state.park.findIndex(d=>d.id===id);state.team.push(state.park.splice(i,1)[0])}park();save(false)}};
     $("#learnChoices").onclick=e=>{const b=e.target.closest("[data-replace]");if(!b)return;const d=[...state.team,...state.park].find(x=>x.id===Number($("#learnOverlay").dataset.dragon)),move=JSON.parse($("#learnOverlay").dataset.move);if(b.dataset.replace!=="no"){d.moves[+b.dataset.replace]=move;log(`${dragonName(d)}学会${move[0]}`)}hide("learnOverlay");save(false)};
+    $("#mapBagBtn").onclick=openInventory;$("#reelBtn").onclick=reelFishing;
+    $("#cancelFishing").onclick=()=>{selectedRod=null;updateFishingUI()};
+    $("#inventoryBody").onclick=e=>{
+      const rod=e.target.closest("[data-rod]");if(rod)return selectRod(Number(rod.dataset.rod));
+      if(e.target.closest("[data-map-potion]")){
+        $("#inventoryBody").innerHTML=state.team.map((d,i)=>`<button class="pixel-btn move-btn" data-heal-dragon="${i}" ${d.hp>=d.maxHp?"disabled":""}>${dragonName(d)} · HP ${d.hp}/${d.maxHp}</button>`).join("");
+      }
+      const target=e.target.closest("[data-heal-dragon]");
+      if(target&&!target.disabled&&state.bag.potion>0){const d=state.team[Number(target.dataset.healDragon)];if(d&&d.hp<d.maxHp){state.bag.potion--;d.hp=Math.min(d.maxHp,d.hp+60);save(false);renderUI();hide("inventoryOverlay");openInventory()}}
+    };
+    canvas.addEventListener("pointerdown",e=>{
+      if(modalOpen)return;e.preventDefault();
+      if(state.fishing)return reelFishing();
+      const rect=canvas.getBoundingClientRect();
+      castFishing((e.clientX-rect.left)*canvas.width/rect.width+camera.x,(e.clientY-rect.top)*canvas.height/rect.height+camera.y);
+    });
     $("#saveBtn").onclick=()=>save();$("#helpBtn").onclick=()=>show("helpOverlay");$$('[data-close]').forEach(b=>b.onclick=()=>hide(b.dataset.close));window.addEventListener("blur",()=>{keys={}});window.addEventListener("beforeunload",()=>save(false));
     const battleCanvas=surface(768,330);battleCanvas.id="battleStage";
     battleCanvas.setAttribute("aria-label","双方的龙在森林空地上对战");
@@ -608,13 +873,16 @@
     $("#serviceBody").addEventListener("click",event=>{
       if(!event.target.closest("[data-new-confirm]"))return;
       try{localStorage.setItem(saveKey()+":backup",JSON.stringify(state))}catch(error){toast("无法备份存档，请稍后重试");return}
-      clearTimeout(hatchTimer);hide("serviceOverlay");state=fresh();save(false);spawnWilds();renderUI();
+      clearTimeout(hatchTimer);hide("serviceOverlay");state=fresh();selectedRod=null;save(false);spawnWilds();renderUI();
       camera.x=0;camera.y=0;$("#mapLabel").textContent=maps.lab.name;show("startOverlay");
     });
     $("#hatchContinue").onclick=()=>{if(state.intro==="done"){hide("starterOverlay");renderUI()}};
     window.addEventListener("resize",()=>{if(battle)renderBattleScene()});
     document.addEventListener("visibilitychange",()=>{if(document.hidden){keys={};save(false)}else updateWorldRewards()});
-    load();spawnWilds();buildScenery();buildChestLocations();updateWorldRewards();buildForest();buildLab();buildArena();buildBattleGround();renderUI();
+    load();spawnWilds();buildScenery();buildDesertScenery();buildChestLocations();
+    // Reuse the reachable land grid, allowing room for the larger dragon sprite.
+    wildLocations=chestLocations.filter(p=>!scenery.some(o=>rectHit({x:p.x-14,y:p.y-14,w:52,h:52},o,8))&&Math.abs(p.x+12-riverX(p.y+12))>100);
+    spawnWilds();updateWorldRewards();buildForest();buildDesert();buildLab();buildArena();buildBattleGround();renderUI();
     follower.x=state.x-34;follower.y=state.y+12;updateCamera();updateNearby();
     $("#mapLabel").textContent=maps[state.map].name;
     if(state.intro==="gender")show("startOverlay");

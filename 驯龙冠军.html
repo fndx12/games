@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>驯龙冠军</title>
+  <style>
+    :root{--ink:#263238;--paper:#fffdf2;--green:#4f8b52;--gold:#e5a936;--red:#c95c4b;--blue:#4c86b7;--line:#3f5148;--shadow:0 8px 0 rgba(45,65,52,.18);font-family:"Courier New","Microsoft YaHei",monospace}
+    *{box-sizing:border-box} body{margin:0;min-height:100vh;color:var(--ink);background:#b9d8a5;image-rendering:pixelated;overflow-x:hidden}
+    button{font:inherit;color:inherit} .shell{width:min(1120px,100%);margin:auto;padding:12px}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;padding:10px 14px;border:3px solid var(--line);background:var(--paper);box-shadow:var(--shadow)}
+    .brand{display:flex;align-items:center;gap:10px}.brand h1{margin:0;font-size:clamp(20px,4vw,32px);letter-spacing:0}.brand-mark{font-size:32px}.top-stats{display:flex;gap:14px;align-items:center;font-weight:800;font-size:14px;flex-wrap:wrap;justify-content:flex-end}
+    .game-layout{display:grid;grid-template-columns:minmax(0,768px) minmax(230px,1fr);gap:12px;align-items:start}
+    .world-wrap{position:relative;border:4px solid var(--line);background:#79aa62;box-shadow:var(--shadow);overflow:hidden;touch-action:none}
+    canvas{display:block;width:100%;height:auto;aspect-ratio:16/10;background:#79aa62;image-rendering:pixelated}
+    .map-label{position:absolute;left:10px;top:10px;padding:6px 10px;background:rgba(255,253,242,.9);border:2px solid var(--line);font-weight:900;font-size:14px;pointer-events:none}
+    .hint{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);width:max-content;max-width:72%;padding:7px 10px;background:rgba(38,50,56,.9);color:white;text-align:center;font-weight:800;font-size:13px;pointer-events:none}
+    .side{display:grid;gap:10px}.panel{border:3px solid var(--line);background:var(--paper);padding:12px;box-shadow:var(--shadow)}.panel h2{margin:0 0 9px;font-size:17px}.team-list{display:grid;gap:7px}.dragon-row{padding:8px;border:2px solid #b9c6b9;background:#f6f4df}.dragon-head{display:flex;justify-content:space-between;gap:6px;font-weight:900;font-size:13px}.hpbar{height:9px;margin-top:5px;border:2px solid var(--line);background:#ddd}.hpfill{height:100%;background:#69a84f}.mini-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.pixel-btn{min-height:42px;padding:8px 10px;border:3px solid var(--line);background:#fff8d8;font-weight:900;box-shadow:0 4px 0 #9baa91;cursor:pointer}.pixel-btn:active{transform:translateY(3px);box-shadow:0 1px 0 #9baa91}.pixel-btn.primary{background:#f5cd63}.pixel-btn.green{background:#9fd282}.pixel-btn.red{background:#ef9d8f}.pixel-btn:disabled{opacity:.45;cursor:not-allowed}
+    .log{height:98px;overflow:auto;font-size:12px;line-height:1.55}.log p{margin:0 0 4px}.touch-controls{position:absolute;inset:auto auto 12px 12px;display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(3,46px);gap:4px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:none}.touch-btn,.touch-dot{display:grid;place-items:center;border:2px solid rgba(38,50,56,.75);background:rgba(255,253,242,.74);font-size:22px;font-weight:900;border-radius:4px}.touch-btn{cursor:pointer;touch-action:none}.touch-btn.pressed{background:rgba(245,205,99,.95);transform:translateY(2px)}.touch-dot{grid-column:2;grid-row:2;background:rgba(79,139,82,.62)}.up{grid-column:2}.left{grid-column:1;grid-row:2}.right{grid-column:3;grid-row:2}.down{grid-column:2;grid-row:3}.action-touch{position:absolute;right:14px;bottom:18px;width:62px;height:62px;border-radius:50%;border:3px solid var(--line);background:rgba(245,205,99,.88);font-weight:900;box-shadow:0 4px 0 rgba(63,81,72,.65)}
+    .overlay{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(25,37,32,.68)}.overlay.show{display:flex}.dialog{width:min(650px,100%);max-height:min(88vh,760px);overflow:auto;border:4px solid var(--line);background:var(--paper);padding:18px;box-shadow:12px 12px 0 rgba(20,35,27,.35)}.dialog.wide{width:min(920px,100%)}.dialog h2{margin:0 0 8px;font-size:24px}.dialog p{line-height:1.55}.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:14px}.choice{padding:12px;border:3px solid var(--line);background:white;text-align:left;cursor:pointer}.choice:hover{background:#fff4be}.choice strong{display:block;font-size:17px;margin-bottom:5px}.choice small{line-height:1.4}.dialog-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px}.gender-card{text-align:center;font-size:34px}.gender-card strong{font-size:18px}.egg{font-size:46px;text-align:center}.battle-top{display:grid;grid-template-columns:1fr 1fr;gap:16px}.fighter{border:3px solid var(--line);padding:12px;background:white}.fighter.enemy{text-align:right}.fighter-sprite{font-size:56px;line-height:1}.battle-log{height:130px;overflow:auto;margin:12px 0;padding:10px;border:3px solid var(--line);background:#eef5df;line-height:1.5}.battle-menu,.move-menu{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.move-menu{margin-top:8px}.move-btn{text-align:left;min-height:58px}.tabs{display:flex;gap:7px;margin:12px 0}.list-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}.item-card{border:2px solid var(--line);padding:9px;background:white}.item-card.selected{background:#dcefcf}.toast{position:fixed;z-index:90;left:50%;bottom:24px;transform:translateX(-50%) translateY(30px);opacity:0;padding:10px 16px;border:3px solid var(--line);background:var(--paper);font-weight:900;transition:.18s;pointer-events:none}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    @media(max-width:820px){.game-layout{grid-template-columns:1fr}.side{grid-template-columns:1fr 1fr}.log-panel{grid-column:1/-1}.touch-controls{grid-template-columns:repeat(3,42px);grid-template-rows:repeat(3,42px)}.topbar{align-items:flex-start}.battle-top{gap:8px}}
+    @media(max-width:560px){.shell{padding:6px}.topbar{padding:8px;display:grid}.top-stats{justify-content:flex-start}.side{grid-template-columns:1fr}.log-panel{grid-column:auto}.touch-controls{left:7px;bottom:7px;grid-template-columns:repeat(3,38px);grid-template-rows:repeat(3,38px);gap:3px}.action-touch{right:8px;bottom:10px;width:54px;height:54px}.hint{bottom:5px;font-size:11px}.dialog{padding:13px}.battle-top{grid-template-columns:1fr}.fighter-sprite{font-size:40px}}
+    /* Map, dialogue and battle share the same silver-edged RPG frames. */
+    [hidden]{display:none!important}
+    body{background:#243d38;color:#283337;font-family:system-ui,-apple-system,"Microsoft YaHei",sans-serif}
+    .shell{width:min(1320px,100%);padding:16px}
+    .topbar{background:#f4efdf;border-color:#a18b64;box-shadow:0 3px 0 #142a26;padding:10px 16px}
+    .brand h1{font-size:26px}.brand small{color:#556961}.top-stats{font-size:14px}
+    .game-layout{grid-template-columns:minmax(0,1fr) 248px;gap:14px}
+    .world-wrap{border:3px solid #cabfa1;box-shadow:0 0 0 2px #172c27;background:#395443}
+    #game{aspect-ratio:8/5}.map-label{color:#fff8e4;background:#303b4ceF;border:2px solid #ddd7c3;border-radius:5px;font-size:14px;box-shadow:0 2px 0 #1d2630}
+    .hint{bottom:auto;top:10px;left:auto;right:10px;transform:none;max-width:55%;background:#303b4cda;color:#ffedb3;border:1px solid #d2c8a4;border-radius:4px;font-size:12px}
+    .panel{background:#f1efdf;border:2px solid #c8bc9f;box-shadow:0 3px 0 #162c27}.panel h2{font-size:15px}.panel p{font-size:13px}.dragon-row{background:transparent;border:none;border-bottom:1px solid #c6cbb7;padding:8px 0}
+    .hpbar{border:1px solid #25382f;height:10px;border-radius:3px;overflow:hidden;background:#1e322b}.hpfill{background:#84e09a;box-shadow:inset 0 -3px 0 #59b976}
+    .pixel-btn{min-height:44px;border:2px solid #9ba5ae;background:#e1e5df;box-shadow:0 3px 0 #374651;border-radius:5px;font-size:14px}.pixel-btn.primary{background:#f1cf75;border-color:#a88332}.pixel-btn.green{background:#b5d8b2}.pixel-btn.red{background:#e9b5a4}
+    .touch-controls{opacity:.82;grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px)}.touch-btn,.touch-dot{border-color:#dfd9bb;background:#303b4cd9;color:#fff5cc;touch-action:none}.action-touch{color:#293641;width:60px;height:60px;touch-action:none;-webkit-user-select:none;-webkit-touch-callout:none}
+    .dialog{background:#f7eddd;border:3px solid #e3dac3;outline:3px solid #443e39;border-radius:7px;box-shadow:0 10px 0 #14272466;max-height:90dvh}.dialog h2{font-size:22px}.choice{border-radius:5px;min-width:0;border:2px solid #777d83;background:#f0eee6;color:#27323c}.choice:hover,.choice:focus-visible{border-color:#ddba4b;background:#fff0ba;outline:2px solid #ffeec2}.choice:disabled{cursor:default;opacity:.65}
+    #starterOverlay{background:#122b2460;align-items:center}#starterOverlay .dialog{width:min(780px,100%);background:#302c29b8;border:0;outline:0;box-shadow:none;padding:16px}
+    .doctor-dialogue{display:flex;align-items:center;gap:16px;background:#f8eddf;border:4px double #716254;border-radius:8px;padding:16px;box-shadow:0 4px 0 #332b27;color:#262e37}.doctor-portrait{width:70px;height:84px;flex:none;image-rendering:pixelated;background:transparent;aspect-ratio:auto}.doctor-dialogue h2{display:inline-block;padding:4px 20px;background:#303b4c;color:#fff;margin-bottom:8px;border-radius:4px;font-size:17px}.doctor-dialogue p{margin:0;font-size:17px;line-height:1.65;font-weight:650}
+    #starterChoices{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:24px}.starter-choice{text-align:center;padding:10px 8px}.starter-choice strong{background:#303b4c;color:#fff;border-radius:4px;padding:7px;font-size:16px}.dragon-art{display:block;width:100%;height:auto;image-rendering:pixelated;object-fit:contain}.starter-choice .dragon-art{aspect-ratio:1;background:transparent;max-height:210px}.starter-choice small{font-size:12px}
+    #hatchStage{text-align:center;min-height:245px;color:#fff7db;padding:10px}.hatch-art{width:210px;height:200px;margin:auto;background:transparent;aspect-ratio:auto}.hatch-message{font-size:17px;font-weight:650;line-height:1.6}
+    #battleOverlay{background:#132922c9}#battleOverlay .dialog{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:12px;width:min(1000px,100%);background:#243c36;padding:12px;color:#f8f4e8}
+    #battleTitle{grid-column:1/-1;margin:0;font-size:17px}#battleStage{grid-column:1/-1;width:100%;aspect-ratio:768/330;background:#5c9059;image-rendering:pixelated}
+    .battle-top{position:absolute;left:26px;right:26px;top:54px;display:flex;justify-content:space-between;gap:14px;pointer-events:none}.fighter{width:38%;max-width:285px;background:#303749ed;color:#fff;border:3px double #e1e4d5;border-radius:6px;padding:8px 10px;box-shadow:0 3px 0 #18282680}.fighter b{font-size:14px}.fighter small{font-size:12px}.fighter .hpbar{margin:7px 0 4px}.fighter.enemy{text-align:left}
+    .battle-log{height:130px;margin:0;background:#303749;color:#fff7e7;border:3px double #dadfda;border-radius:5px;font-size:14px}#battleMenu{align-content:start}.battle-menu .pixel-btn{min-height:58px;background:#526986;color:#fff;font-size:17px}.battle-menu .primary{background:#f5ce72;color:#263444}.move-menu{grid-column:1/-1;margin:0}.move-menu:empty{display:none}.move-btn{font-size:14px}
+    .encounter-art{width:170px;height:170px;margin:auto;background:transparent}.new-game{grid-column:1/-1;margin-top:8px;background:#f1efdf;font-size:12px;box-shadow:none}.log{height:110px}
+    @media(max-width:950px){.game-layout{grid-template-columns:1fr}.side{grid-template-columns:1fr 1fr 1fr}.log-panel{grid-column:auto}.shell{padding:10px}.panel{min-width:0}.topbar{align-items:center}}
+    @media(max-width:600px){.shell{padding:6px}.topbar{display:flex;gap:8px;padding:8px}.brand h1{font-size:20px}.brand-mark{display:none}.top-stats{gap:6px;font-size:12px;max-width:150px}.brand small{font-size:11px}.side{grid-template-columns:1fr 1fr;gap:8px}.log-panel{grid-column:1/-1}.panel{padding:9px}.dragon-head{font-size:12px}.touch-controls{position:relative;inset:auto;grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px);margin:8px;opacity:1}.world-wrap{background:#385447}#game{aspect-ratio:8/5}.action-touch{bottom:32px;right:22px;width:70px;height:70px}.map-label{font-size:11px;padding:4px;top:6px;left:6px}.hint{font-size:10px;padding:4px;top:6px;right:6px;max-width:50%}.dialog{padding:10px}.overlay{padding:10px}.doctor-dialogue{gap:8px;padding:10px}.doctor-dialogue p{font-size:14px}.doctor-portrait{width:48px;height:62px}.doctor-dialogue h2{font-size:14px}#starterOverlay .dialog{padding:4px}#starterChoices{gap:6px;margin-top:12px}.starter-choice{padding:5px}.starter-choice strong{font-size:12px;padding:6px 2px}.starter-choice small{font-size:10px}.battle-top{left:18px;right:18px;top:46px;gap:12px}.fighter{width:45%;padding:5px}.fighter b{font-size:11px}.fighter small{font-size:10px}#battleOverlay .dialog{padding:8px;gap:8px}.battle-menu .pixel-btn{font-size:14px;min-height:54px;padding:5px}.battle-log{font-size:12px;height:116px}#battleStage{aspect-ratio:768/440}.new-game{min-height:36px}}
+    @media(max-height:500px) and (min-width:601px){
+      .shell{padding:6px}.topbar{padding:5px 10px;margin-bottom:8px;min-height:54px}.brand h1{font-size:20px}.brand-mark{font-size:24px}
+      .game-layout{grid-template-columns:minmax(0,1fr) 205px;gap:8px}.world-wrap{width:min(100%,calc((100dvh - 88px)*1.6));justify-self:center}
+      .side{display:block;max-height:calc(100dvh - 82px);overflow:auto}.side .panel{margin-bottom:8px}.panel{padding:8px}
+      .touch-controls{grid-template-columns:repeat(3,38px);grid-template-rows:repeat(3,38px);gap:3px;left:8px;bottom:8px}.action-touch{width:52px;height:52px;right:10px;bottom:10px}
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar"><div class="brand"><span class="brand-mark">🐉</span><div><h1>驯龙冠军</h1><small id="playerLabel">冒险者</small></div></div><div class="top-stats"><span>🪙 <b id="coins">0</b></span><span>🧪 药 <b id="potions">0</b></span><span>🐟 <b id="fish">0</b></span><span>✨ <b id="rareFish">0</b></span></div></header>
+    <section class="game-layout">
+      <div id="worldWrap" class="world-wrap">
+        <canvas id="game" width="768" height="480" aria-label="驯龙世界地图"></canvas><div id="mapLabel" class="map-label">博士研究所</div><div id="hint" class="hint">方向键 / WASD 移动，空格互动</div>
+        <div class="touch-controls" aria-label="触屏方向键"><button class="touch-btn up" data-dir="up" aria-label="向上">↑</button><button class="touch-btn left" data-dir="left" aria-label="向左">←</button><span class="touch-dot">●</span><button class="touch-btn right" data-dir="right" aria-label="向右">→</button><button class="touch-btn down" data-dir="down" aria-label="向下">↓</button></div><button id="actionTouch" class="action-touch" aria-label="互动">互动</button>
+      </div>
+      <aside class="side"><section class="panel"><h2>当前队伍 <span id="teamCount"></span></h2><div id="teamList" class="team-list"></div></section><section class="panel"><h2>冒险进度</h2><div id="progress"></div><div class="mini-actions"><button id="saveBtn" class="pixel-btn">保存</button><button id="helpBtn" class="pixel-btn">玩法</button></div></section><section class="panel log-panel"><h2>旅途记录</h2><div id="worldLog" class="log"></div></section></aside>
+    </section>
+  </main>
+
+  <div id="startOverlay" class="overlay"><div class="dialog"><h2>欢迎来到龙栖谷</h2><p>先选择你的冒险者。外观不同，但能力完全相同。</p><div class="choices"><button class="choice gender-card" data-gender="男">🧑<strong>男孩</strong></button><button class="choice gender-card" data-gender="女">👧<strong>女孩</strong></button></div></div></div>
+  <div id="starterOverlay" class="overlay" role="dialog" aria-label="选择第一颗龙蛋"><div class="dialog"><div class="doctor-dialogue"><canvas id="doctorPortrait" class="doctor-portrait" width="70" height="84"></canvas><div><h2>博士</h2><p id="starterSpeech">欢迎你！在开始驯龙之旅以前，先选择你的第一颗龙蛋吧！</p></div></div><div id="starterChoices" class="choices"></div><div id="hatchStage" hidden><canvas id="hatchArt" class="hatch-art" width="210" height="200"></canvas><p id="hatchMessage" class="hatch-message"></p><button id="hatchContinue" class="pixel-btn primary" hidden>带上伙伴，出发吧</button></div></div></div>
+  <div id="encounterOverlay" class="overlay"><div class="dialog"><h2 id="encounterTitle">遇见野生龙</h2><div id="encounterInfo"></div><div class="dialog-actions"><button class="pixel-btn red" data-encounter="battle">对战</button><button class="pixel-btn green" data-encounter="normal">普通鱼驯服</button><button class="pixel-btn primary" data-encounter="rare">高级鱼驯服</button><button class="pixel-btn" data-encounter="leave">离开</button></div></div></div>
+  <div id="battleOverlay" class="overlay"><div class="dialog wide"><h2 id="battleTitle">龙对战</h2><div class="battle-top"><div id="playerFighter" class="fighter"></div><div id="enemyFighter" class="fighter enemy"></div></div><div id="battleLog" class="battle-log"></div><div id="battleMenu" class="battle-menu"><button class="pixel-btn primary" data-battle="moves">招式</button><button class="pixel-btn" data-battle="switch">换龙</button><button class="pixel-btn green" data-battle="bag">背包</button><button class="pixel-btn red" data-battle="run">逃跑</button></div><div id="battleSubmenu" class="move-menu"></div></div></div>
+  <div id="serviceOverlay" class="overlay"><div class="dialog wide"><h2 id="serviceTitle">博士研究所</h2><div id="serviceBody"></div><div class="dialog-actions"><button id="serviceClose" class="pixel-btn">关闭</button></div></div></div>
+  <div id="learnOverlay" class="overlay"><div class="dialog"><h2>学会新招式</h2><p id="learnText"></p><div id="learnChoices" class="choices"></div></div></div>
+  <div id="helpOverlay" class="overlay"><div class="dialog"><h2>冒险指南</h2><p><b>移动：</b>方向键或 WASD；手机和平板可使用屏幕方向键。靠近人物或设施按空格，也可点“互动”。</p><p><b>目标：</b>在森林驯龙、战斗升级、洞穴找蛋。拥有至少 2 条龙并赢得 3 场野外战斗后，竞技场会开放。</p><p><b>研究所：</b>博士可治疗、孵蛋和管理队伍；柜台可以买药和鱼。最多携带 3 条龙。</p><div class="dialog-actions"><button class="pixel-btn primary" data-close="helpOverlay">知道了</button></div></div></div>
+  <div id="toast" class="toast"></div>
+
+  <script>
+  (()=>{
+    "use strict";
+    const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+    const canvas=$("#game"),ctx=canvas.getContext("2d");ctx.imageSmoothingEnabled=false;
+    const TYPES={
+      火:{names:["小火龙","炽焰龙","烈焰巨龙"],color:"#e85b3f",icon:"🔥",base:[92,30,18,24],moves:[["火花",30],["火焰冲击",40],["烈焰爪",50],["爆炎球",60],["灼热吐息",40],["火焰旋风",45],["熔岩猛击",65],["终极烈焰",80]]},
+      水:{names:["小水龙","浪涛龙","沧海巨龙"],color:"#4c91cf",icon:"💧",base:[105,25,23,20],moves:[["水弹",30],["水流冲击",40],["水尾",50],["水炮",60],["浪涛击",45],["漩涡",35],["水幕冲锋",40],["沧海巨浪",75]]},
+      冰:{names:["小冰龙","霜甲龙","极寒冰龙"],color:"#79cbd5",icon:"❄️",base:[95,26,26,20],moves:[["冰刺",30],["冰冻吐息",40],["冰爪",50],["寒霜冲击",45],["冰晶爆裂",60],["冻气波",35],["极寒突袭",55],["冰封风暴",75]]},
+      雷:{names:["小雷龙","雷爪龙","轰雷天龙"],color:"#e8c13a",icon:"⚡",base:[88,29,17,31],moves:[["电击",30],["雷光爪",40],["闪电冲击",50],["雷球",55],["电光突袭",40],["雷鸣波",45],["狂雷连击",60],["天雷轰击",80]]},
+      草:{names:["小草龙","藤甲龙","森林古龙"],color:"#61a84f",icon:"🌿",base:[108,24,25,18],moves:[["藤鞭",30],["叶片斩",40],["种子弹",45],["荆棘刺",50],["藤蔓冲击",55],["青草回复",0],["森林冲锋",50],["古树之怒",70]]},
+      毒:{names:["小毒龙","紫雾龙","剧毒魔龙"],color:"#9857a5",icon:"☠️",base:[94,28,19,25],moves:[["毒液",25],["毒牙",40],["毒雾",0],["毒刺",45],["腐蚀液",40],["剧毒吐息",50],["毒爆",65],["致命毒雾",45]]},
+      光:{names:["小光龙","曜光龙","圣辉天龙"],color:"#f3d969",icon:"☀️",base:[100,26,22,24],moves:[["光弹",30],["闪光冲击",40],["光辉爪",50],["治愈之光",0],["圣光波",45],["耀光突袭",55],["光明护盾",0],["圣辉爆发",70]]},
+      暗:{names:["小暗龙","夜翼龙","暗夜巨龙"],color:"#4f486c",icon:"🌙",base:[90,31,18,27],moves:[["暗影球",30],["影爪",40],["黑暗冲击",50],["夜袭",45],["暗影突袭",55],["黑雾",0],["暗夜连击",70],["深渊爆发",80]]},
+      一般:{names:["小角龙","巨角龙","远古巨龙"],color:"#a57b58",icon:"🦴",base:[112,27,25,17],moves:[["撞击",30],["甩尾",40],["猛撞",50],["角击",55],["重踏",45],["咆哮冲击",35],["巨角冲锋",65],["远古猛击",75]]}
+    };
+    const LEARN=[1,4,7,10,14,18,23,28],SAVE_PREFIX="dragonChampionV1:";
+    // Real-time durations in milliseconds; all reward timers use these two settings.
+    const CAVE_COOLDOWN = 5 * 60 * 1000;
+    const CHEST_RESPAWN_TIME = 5 * 60 * 1000;
+    const freshChest=()=>({active:false,position:null,lastOpenedAt:0,nextSpawnAt:0,lastPosition:null});
+    let playerName="爸爸";
+    try{playerName=localStorage.getItem("familyPlayer")||"爸爸"}catch(error){}
+    $("#playerLabel").textContent=`当前玩家：${playerName}`;
+    const fresh=()=>({version:1,worldRevision:2,intro:"gender",starterType:null,gender:null,map:"lab",x:374,y:282,coins:240,bag:{potion:2,fish:3,rareFish:1},team:[],park:[],eggs:[],wins:0,champion:false,chests:[],caveReadyAt:{forest:0},randomChest:freshChest(),wildSeed:Date.now(),logs:["欢迎来到龙栖谷。"]});
+    let state=fresh(), keys={}, activeWild=null, battle=null, modalOpen=false, last=0;
+    let ignoredWild=null,portalCooldown=0,hatchStart=0,hatchTimer=null,facing=1;
+    const camera={x:0,y:0},follower={x:350,y:310};
+    const saveKey=()=>SAVE_PREFIX+playerName;
+    function save(show=true){try{localStorage.setItem(saveKey(),JSON.stringify(state));if(show)toast("游戏已保存")}catch(error){if(show)toast("浏览器暂时无法保存，请勿关闭页面")}}
+    function load(){
+      try{
+        const saved=JSON.parse(localStorage.getItem(saveKey()));
+        if(!saved||saved.version!==1)return;
+        state=Object.assign(fresh(),saved);
+        state.caveReadyAt=Object.assign({forest:0},saved.caveReadyAt);
+        state.randomChest=Object.assign(freshChest(),saved.randomChest);
+        // Old one-off chests have no opening timestamp. Start their first respawn wait on migration.
+        if(!saved.randomChest&&saved.chests?.includes("forest"))state.randomChest.nextSpawnAt=Date.now()+CHEST_RESPAWN_TIME;
+        // Existing companions prove that the original opening has already completed.
+        if(!saved.intro)state.intro=state.team.length||state.park.length?"done":state.gender?"choose":"gender";
+        if(saved.worldRevision!==2){
+          if(saved.map==="forest"){state.x=335;state.y=440}
+          state.worldRevision=2;
+        }
+        if(!maps[state.map]){state.map="lab";state.x=374;state.y=282}
+        if(state.intro!=="done"){state.map="lab";state.x=374;state.y=282}
+        if(!saved.randomChest)save(false);
+      }catch(error){}
+    }
+    function makeDragon(type,level=1){const t=TYPES[type], [hp,atk,def,spd]=t.base, scale=level-1,form=level>=20?2:level>=10?1:0;const d={id:Date.now()+Math.random(),type,level,exp:0,form,maxHp:hp+scale*7,atk:atk+scale*2,def:def+scale*2,spd:spd+scale*2,hp:hp+scale*7,moves:[]};for(let i=0;i<LEARN.length;i++)if(level>=LEARN[i])d.moves.push(t.moves[i]);d.moves=d.moves.slice(-4);return d}
+    const dragonName=d=>TYPES[d.type].names[d.form];
+    function log(msg){state.logs.unshift(msg);state.logs=state.logs.slice(0,20);renderUI()}
+    function toast(msg){const el=$("#toast");el.textContent=msg;el.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove("show"),1800)}
+    function show(id){keys={};$("#"+id).classList.add("show");modalOpen=true}function hide(id){$("#"+id).classList.remove("show");modalOpen=$$(".overlay.show").length>0}
+    function renderUI(){$("#coins").textContent=state.coins;$("#potions").textContent=state.bag.potion;$("#fish").textContent=state.bag.fish;$("#rareFish").textContent=state.bag.rareFish;$("#teamCount").textContent=`${state.team.length}/3`;$("#teamList").innerHTML=state.team.length?state.team.map((d,i)=>`<div class="dragon-row"><div class="dragon-head"><span>${TYPES[d.type].icon} ${dragonName(d)}</span><span>Lv.${d.level}</span></div><div class="hpbar"><div class="hpfill" style="width:${Math.max(0,d.hp/d.maxHp*100)}%"></div></div><small>HP ${d.hp}/${d.maxHp} · ${d.type}</small></div>`).join(""):"<small>还没有龙伙伴</small>";$("#progress").innerHTML=`<p>野外胜利：<b>${state.wins}</b> / 3</p><p>收藏：<b>${state.team.length+state.park.length}</b> 条龙 · <b>${state.eggs.length}</b> 颗蛋</p><p>${state.champion?"🏆 新任驯龙冠军":"竞技场："+(canChallenge()?"已开放":"尚未开放")}</p>`;$("#worldLog").innerHTML=state.logs.map(x=>`<p>• ${x}</p>`).join("")}
+    const canChallenge=()=>state.wins>=3&&state.team.length>=2;
+    const TILE=16;
+    const maps={
+      lab:{name:"博士的小屋",w:768,h:480,door:{x:352,y:427,w:64,h:42},doctor:{x:358,y:195,w:52,h:52},shop:{x:553,y:157,w:72,h:66},hatch:{x:171,y:163,w:74,h:62},park:{x:568,y:305,w:70,h:70}},
+      forest:{name:"翡翠森林",w:2304,h:1440,lab:{x:324,y:373,w:40,h:24},cave:{x:1708,y:805,w:66,h:38},arena:{x:1860,y:304,w:64,h:32}},
+      arena:{name:"冠军竞技场",w:768,h:480,exit:{x:352,y:427,w:64,h:42},champ:{x:353,y:130,w:62,h:52}}
+    };
+    let wilds=[];
+    function spawnWilds(){
+      const types=Object.keys(TYPES),positions=[[500,548],[775,300],[730,920],[1330,530],[1550,1090],[2010,480],[1930,1130],[415,1200],[1390,265]];
+      wilds=positions.map(([x,y],i)=>({x,y,type:types[(state.wildSeed+i*4+1)%9],level:2+state.wins+i%3,id:i,active:true}));
+    }
+    function rectHit(a,b,pad=0){return a.x+a.w>b.x-pad&&a.x<b.x+b.w+pad&&a.y+a.h>b.y-pad&&a.y<b.y+b.h+pad}
+    const playerRect=()=>({x:state.x,y:state.y,w:20,h:28});
+    function near(r,p=22){return rectHit(playerRect(),r,p)}
+    function setMap(map,x,y){state.map=map;state.x=x;state.y=y;follower.x=x-30;follower.y=y+10;portalCooldown=performance.now()+900;updateCamera();$("#mapLabel").textContent=maps[map].name;log(`来到${maps[map].name}`);save(false)}
+    function enterArena(){if(canChallenge()||state.champion)return setMap("arena",374,386);toast("需要2条龙并赢得3场野外战斗")}
+    function interact(){
+      if(modalOpen)return;
+      const m=maps[state.map];
+      if(state.map==="lab"){
+        if(near(m.doctor))return doctor();if(near(m.shop))return shop();if(near(m.hatch))return hatchery();if(near(m.park))return park();
+        if(near(m.door))return setMap("forest",335,416);
+      }
+      if(state.map==="forest"){
+        if(near(m.lab))return setMap("lab",374,386);if(near(m.cave))return cave();if(chestRect()&&near(chestRect()))return chest();if(near(m.arena))return enterArena();
+      }
+      if(state.map==="arena"){if(near(m.exit))return setMap("forest",1882,358);if(near(m.champ))return champion()}
+      toast("走近人物或入口后再互动");
+    }
+    function doctor(){openService("博士",`<p>“欢迎回来，${playerName}！我可以治疗所有龙，也可以帮你孵蛋。”</p><div class="dialog-actions"><button class="pixel-btn green" data-service="heal">治疗全部</button><button class="pixel-btn primary" data-service="hatch">孵化龙蛋（${state.eggs.length}）</button><button class="pixel-btn" data-service="park">管理龙园</button></div>`)}
+    function shop(){openService("研究所商店",`<p>金币：${state.coins}</p><div class="list-grid"><div class="item-card"><b>回血药</b><p>恢复60 HP</p><button class="pixel-btn" data-buy="potion" data-price="60">60金币</button></div><div class="item-card"><b>普通鱼</b><p>基础驯服机会</p><button class="pixel-btn" data-buy="fish" data-price="35">35金币</button></div><div class="item-card"><b>高级鱼</b><p>更高驯服机会</p><button class="pixel-btn" data-buy="rareFish" data-price="110">110金币</button></div></div>`)}
+    function hatchery(){openService("孵蛋区域",state.eggs.length?`<p>你有 ${state.eggs.length} 颗龙蛋。博士可以免费孵化。</p><button class="pixel-btn primary" data-service="hatch">孵化一颗</button>`:"<p>暂时没有龙蛋。去森林洞穴找找吧。</p>")}
+    function park(){const all=[...state.team.map(d=>({d,loc:"team"})),...state.park.map(d=>({d,loc:"park"}))];openService("龙园与队伍",`<p>点击龙伙伴可在队伍和龙园之间移动。队伍最多3条，至少保留1条。</p><div class="list-grid">${all.map(({d,loc})=>`<div class="item-card"><b>${TYPES[d.type].icon} ${dragonName(d)} Lv.${d.level}</b><p>${loc==="team"?"当前队伍":"博士龙园"} · HP ${d.hp}/${d.maxHp}</p><button class="pixel-btn" data-transfer="${d.id}" data-from="${loc}">${loc==="team"?"存入龙园":"加入队伍"}</button></div>`).join("")}</div>`)}
+    function openService(title,html){$("#serviceTitle").textContent=title;$("#serviceBody").innerHTML=html;show("serviceOverlay")}
+    function cave(){
+      if(state.map!=="forest"||!near(maps.forest.cave))return;
+      const now=Date.now();
+      if(now<state.caveReadyAt.forest)return toast("这里刚刚搜索过，过一段时间再来看看吧。");
+      state.caveReadyAt.forest=now+CAVE_COOLDOWN;
+      const chance=Math.random();
+      if(chance<.62){const types=Object.keys(TYPES),type=types[Math.floor(Math.random()*types.length)];state.eggs.push(type);log(`在洞穴找到一颗${type}属性龙蛋`);toast("找到龙蛋！回研究所孵化")}
+      else{const gold=40+Math.floor(Math.random()*61);state.coins+=gold;log(`在洞穴找到 ${gold} 金币`);toast(`找到 ${gold} 金币`)}
+      state.wildSeed++;spawnWilds();save(false);
+    }
+    function chestRect(){
+      const chest=state.randomChest;
+      return chest.active&&chest.position?{...chest.position,w:32,h:28}:null;
+    }
+    function chest(){
+      const area=chestRect();
+      if(state.map!=="forest"||!area||!near(area))return;
+      const now=Date.now(),chest=state.randomChest;
+      // Claim and remove before granting rewards, so repeated inputs cannot open the same chest.
+      chest.active=false;chest.lastPosition={...chest.position};chest.position=null;
+      chest.lastOpenedAt=now;chest.nextSpawnAt=now+CHEST_RESPAWN_TIME;
+      const roll=Math.random();let reward;
+      if(roll<.50){const gold=30+Math.floor(Math.random()*31);state.coins+=gold;reward=`${gold}金币`}
+      else if(roll<.75){state.bag.potion++;reward="1瓶回血药"}
+      else if(roll<.95){state.bag.fish++;reward="1条普通鱼"}
+      else{state.bag.rareFish++;reward="1条高级鱼"}
+      log(`打开森林宝箱：${reward}`);toast(`找到${reward}`);save(false);
+    }
+    function champion(){if(state.champion)return toast("冠军向你致意：继续探索吧！");const enemy=makeDragon("光",Math.max(8,Math.min(14,6+state.wins)));startBattle(enemy,true)}
+    function encounter(w){
+      if(!w.active||modalOpen)return;
+      ignoredWild=w.id;activeWild=w;const d=makeDragon(w.type,w.level);activeWild.dragon=d;
+      $("#encounterTitle").textContent="遇见野生"+dragonName(d);
+      $("#encounterInfo").innerHTML=spriteMarkup(d.type,d.form,"dragon-art encounter-art")+
+        "<p>Lv."+d.level+" · "+d.type+"属性。它安静地看着你。</p><p>普通鱼 "+state.bag.fish+" · 高级鱼 "+state.bag.rareFish+"</p>";
+      show("encounterOverlay");
+    }
+    function tame(kind){const item=kind==="rare"?"rareFish":"fish";if(state.bag[item]<=0)return toast("这种鱼已经用完了");state.bag[item]--;const d=activeWild.dragon,base=kind==="rare"?.72:.42,chance=Math.max(.16,base-d.level*.025);if(Math.random()<chance){hide("encounterOverlay");activeWild.active=false;(state.team.length<3?state.team:state.park).push(d);log(`成功驯服${dragonName(d)}，${state.team.includes(d)?"加入队伍":"送往龙园"}`);save(false);toast("驯服成功！")}else{hide("encounterOverlay");toast("驯服失败，野生龙先攻！");startBattle(d,false,true)}}
+    function startBattle(enemy,isChampion=false,ambush=false){if(!state.team.some(d=>d.hp>0)){toast("队伍需要先治疗");return}battle={enemy,isChampion,active:Math.max(0,state.team.findIndex(d=>d.hp>0)),participants:new Set(),enemyMods:{atk:0,def:0,spd:0},playerMods:{atk:0,def:0,spd:0},busy:ambush};battle.participants.add(state.team[battle.active].id);$("#battleTitle").textContent=isChampion?"最终冠军战":"野生龙对战";$("#battleLog").innerHTML="";show("battleOverlay");battleLog(`${dragonName(enemy)}出现了！`);renderBattle();if(ambush)setTimeout(()=>enemyTurn(true),450)}
+    function fighterHTML(d,enemy=false){
+      return '<b>'+(enemy?"野生 ":"")+dragonName(d)+' · Lv.'+d.level+'</b><div class="hpbar"><div class="hpfill" style="width:'+Math.max(0,d.hp/d.maxHp*100)+'%"></div></div><small>HP '+d.hp+' / '+d.maxHp+'</small>';
+    }
+    function renderBattle(){
+      if(!battle)return;
+      $("#playerFighter").innerHTML=fighterHTML(state.team[battle.active]);
+      $("#enemyFighter").innerHTML=fighterHTML(battle.enemy,!battle.isChampion);
+      $("#battleSubmenu").innerHTML="";$("#battleMenu").style.display="grid";
+      $$("#battleMenu button").forEach(button=>button.disabled=battle.busy);
+      renderBattleScene();
+    }
+    function battleLog(msg){const el=$("#battleLog");el.innerHTML+=`<div>› ${msg}</div>`;el.scrollTop=el.scrollHeight}
+    function damage(attacker,defender,power,aMods,dMods){const raw=(power*.42+attacker.atk+aMods.atk*.5)-(defender.def+dMods.def)*.55;return Math.max(1,Math.round(raw*(.9+Math.random()*.2)))}
+    function useMove(side,move){const attacker=side==="player"?state.team[battle.active]:battle.enemy, defender=side==="player"?battle.enemy:state.team[battle.active],am=side==="player"?battle.playerMods:battle.enemyMods,dm=side==="player"?battle.enemyMods:battle.playerMods;const [name,power]=move;if(power===0){if(name.includes("回复")||name.includes("治愈")){const heal=name.includes("60")?60:50;attacker.hp=Math.min(attacker.maxHp,attacker.hp+heal);battleLog(`${dragonName(attacker)}使用${name}，恢复${heal}HP`)}else{am.def+=20;battleLog(`${dragonName(attacker)}使用${name}，防御提高了`)}return}if((name==="爆炎球"||name==="水炮")&&Math.random()>.9){battleLog(`${name}没有命中！`);return}const hit=damage(attacker,defender,power,am,dm);defender.hp=Math.max(0,defender.hp-hit);battleLog(`${dragonName(attacker)}使用${name}，造成${hit}伤害`);if(name.includes("回复")||name==="圣光波"||name==="古树之怒")attacker.hp=Math.min(attacker.maxHp,attacker.hp+20);if(name.includes("浪涛")||name.includes("腐蚀"))dm.def-=10;if(name.includes("雷鸣")||name.includes("寒霜")||name.includes("重踏"))dm.spd-=10}
+    function chooseMove(move){if(battle.busy)return;battle.busy=true;$("#battleSubmenu").innerHTML="";const p=state.team[battle.active],e=battle.enemy,playerFirst=p.spd+battle.playerMods.spd>=e.spd+battle.enemyMods.spd;const order=playerFirst?[()=>useMove("player",move),()=>enemyAttack()]:[()=>enemyAttack(),()=>useMove("player",move)];runActions(order)}
+    function enemyAttack(){if(battle.enemy.hp<=0)return;const moves=battle.enemy.moves,move=moves[Math.floor(Math.random()*moves.length)];useMove("enemy",move)}
+    function runActions(actions,index=0){if(!battle)return;if(checkBattleEnd())return;if(index>=actions.length){battle.busy=false;renderBattle();return}actions[index]();renderBattle();setTimeout(()=>{if(checkBattleEnd())return;runActions(actions,index+1)},550)}
+    function enemyTurn(ambush=false){if(!battle)return;battle.busy=true;enemyAttack();renderBattle();setTimeout(()=>{if(!checkBattleEnd()){battle.busy=false;renderBattle()}},550)}
+    function checkBattleEnd(){if(!battle)return true;if(battle.enemy.hp<=0){winBattle();return true}const p=state.team[battle.active];if(p.hp<=0){battleLog(`${dragonName(p)}失去战斗能力`);const next=state.team.findIndex(d=>d.hp>0);if(next<0){loseBattle();return true}battle.active=next;battle.participants.add(state.team[next].id);battle.busy=false;renderBattle();battleLog(`${dragonName(state.team[next])}上场！`);return true}return false}
+    function winBattle(){const wasChampion=battle.isChampion,enemy=battle.enemy;const reward=wasChampion?500:35+enemy.level*12;state.coins+=reward;if(!wasChampion)state.wins++;for(const id of battle.participants){const d=state.team.find(x=>x.id===id);if(d)gainExp(d,20+enemy.level*10)}if(activeWild)activeWild.active=false;hide("battleOverlay");battle=null;activeWild=null;if(wasChampion){state.champion=true;log("击败最终冠军，你成为新的驯龙冠军！");openService("你成为新的驯龙冠军！","<p class='egg'>🏆🐉</p><p>全场为你欢呼。你仍然可以继续探索龙栖谷、收集龙蛋并培养伙伴。</p>")}else{log(`赢得野外战斗，获得${reward}金币`);toast("战斗胜利！")}save(false);renderUI()}
+    function loseBattle(){const lost=Math.min(state.coins,50);state.coins-=lost;state.team.forEach(d=>d.hp=d.maxHp);hide("battleOverlay");battle=null;activeWild=null;setMap("lab",350,350);log(`战斗失败，博士治好了伙伴，损失${lost}金币`);save(false)}
+    function gainExp(d,amount){d.exp+=amount;while(d.level<30&&d.exp>=d.level*24){d.exp-=d.level*24;d.level++;d.maxHp+=7;d.hp+=7;d.atk+=2;d.def+=2;d.spd+=2;const old=d.form;d.form=d.level>=20?2:d.level>=10?1:0;log(`${dragonName(d)}升到Lv.${d.level}${d.form>old?"并进化了！":""}`);const idx=LEARN.indexOf(d.level);if(idx>=0)learnMove(d,TYPES[d.type].moves[idx])}}
+    function learnMove(d,move){if(d.moves.some(m=>m[0]===move[0]))return;if(d.moves.length<4){d.moves.push(move);log(`${dragonName(d)}学会${move[0]}`);return}$("#learnText").textContent=`${dragonName(d)}想学习“${move[0]}”，请选择替换一个旧招式，或放弃学习。`;$("#learnChoices").innerHTML=d.moves.map((m,i)=>`<button class="choice" data-replace="${i}"><strong>${m[0]}</strong><small>威力 ${m[1]||"变化"}</small></button>`).join("")+`<button class="choice" data-replace="no"><strong>放弃学习</strong></button>`;$("#learnOverlay").dataset.dragon=d.id;$("#learnOverlay").dataset.move=JSON.stringify(move);show("learnOverlay")}
+    function switchMenu(){const choices=state.team.map((d,i)=>`<button class="pixel-btn move-btn" data-switch="${i}" ${i===battle.active||d.hp<=0?"disabled":""}>${TYPES[d.type].icon} ${dragonName(d)}<br>HP ${d.hp}/${d.maxHp}</button>`).join("");$("#battleSubmenu").innerHTML=choices+`<button class="pixel-btn" data-back="1">返回</button>`}
+    function switchDragon(i){if(battle.busy)return;const current=state.team[battle.active],enemy=battle.enemy,enemyFirst=enemy.spd+battle.enemyMods.spd>current.spd+battle.playerMods.spd;battle.busy=true;const swap=()=>{battle.active=i;battle.participants.add(state.team[i].id);battleLog(`换上${dragonName(state.team[i])}`)};runActions(enemyFirst?[()=>enemyAttack(),swap]:[swap,()=>enemyAttack()])}
+    function bagMenu(){$("#battleSubmenu").innerHTML=`<button class="pixel-btn move-btn" data-potion="1" ${state.bag.potion<=0?"disabled":""}>🧪 回血药 ×${state.bag.potion}<br>恢复60 HP</button><button class="pixel-btn" data-back="1">返回</button>`}
+    function usePotion(){if(battle.busy||state.bag.potion<=0)return;state.bag.potion--;const d=state.team[battle.active];d.hp=Math.min(d.maxHp,d.hp+60);battleLog(`${dragonName(d)}恢复60 HP`);battle.busy=true;runActions([()=>enemyAttack()])}
+    function runAway(){if(battle.isChampion)return toast("冠军战不能逃跑");if(Math.random()<.8){battleLog("成功逃离战斗");setTimeout(()=>{hide("battleOverlay");battle=null;activeWild=null},350)}else{battleLog("逃跑失败！");enemyTurn()}}
+
+    // All visual assets are cached low-resolution canvases; world coordinates remain unscaled.
+    function surface(w,h){const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").imageSmoothingEnabled=false;return c}
+    function box(g,x,y,w,h,color){g.fillStyle=color;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))}
+    function poly(g,points,color){g.fillStyle=color;g.beginPath();points.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));g.closePath();g.fill()}
+    function shade(hex,amount){const n=parseInt(hex.slice(1),16);return "#"+[n>>16,(n>>8)&255,n&255].map(c=>Math.max(0,Math.min(255,c+amount)).toString(16).padStart(2,"0")).join("")}
+    function noise(x,y){const n=Math.sin(x*127.1+y*311.7)*43758.5453;return n-Math.floor(n)}
+    const dragonSprites=new Map();
+    function dragonSprite(type,form=0){
+      const key=type+form;if(dragonSprites.has(key))return dragonSprites.get(key);
+      const c=surface(80,80),g=c.getContext("2d"),base=type==="冰"?"#d5edf5":TYPES[type].color,dark=shade(base,-55),light=shade(base,35),outline="#293942",belly=type==="冰"?"#ffffff":"#f7ddb1";
+      // Tail, membrane wings, haunches, chest, horns and bright eyes form a readable silhouette.
+      poly(g,[[34,57],[22,65],[9,63],[4,55],[5,43],[10,53],[18,55],[29,49]],outline);
+      poly(g,[[33,58],[22,61],[11,60],[8,54],[8,49],[14,56],[25,54]],base);
+      poly(g,[[35,40],[18,10],[17,29],[8,24],[15,43],[29,51]],outline);
+      poly(g,[[32,43],[20,18],[21,33],[13,29],[19,41],[28,46]],light);
+      poly(g,[[32,43],[20,18],[26,36],[28,46]],dark);
+      poly(g,[[39,38],[46,7],[48,23],[60,18],[55,35],[46,46]],outline);
+      poly(g,[[42,37],[46,15],[48,28],[56,24],[51,35],[46,41]],light);
+      poly(g,[[26,42],[43,34],[56,43],[55,60],[46,70],[27,66],[23,55]],outline);
+      poly(g,[[29,43],[43,38],[53,45],[51,60],[44,66],[29,63],[27,53]],base);
+      poly(g,[[41,42],[50,45],[49,60],[43,64],[37,59],[37,49]],belly);
+      box(g,28,61,10,9,dark);box(g,25,68,15,5,outline);box(g,27,68,11,3,base);
+      box(g,45,62,9,9,base);box(g,43,69,16,5,outline);box(g,45,69,12,3,light);
+      box(g,27,69,3,2,"#fff5de");box(g,33,69,3,2,"#fff5de");box(g,46,70,3,2,"#fff5de");box(g,52,70,3,2,"#fff5de");
+      poly(g,[[39,22],[37,13],[45,17],[49,11],[59,17],[66,24],[66,31],[74,34],[73,42],[64,48],[50,46],[40,39]],outline);
+      poly(g,[[42,24],[41,18],[46,22],[50,16],[59,21],[63,26],[63,34],[70,36],[69,40],[63,44],[52,42],[43,36]],base);
+      poly(g,[[44,18],[41,8],[48,15],[48,21]],"#f6e7c1");
+      poly(g,[[56,19],[58,10],[62,14],[60,23]],"#fff0d2");
+      box(g,49,26,10,10,outline);box(g,50,25,8,9,"#fffdf3");box(g,54,28,5,8,type==="冰"?"#4569ae":"#195059");box(g,55,27,3,3,"#fff");
+      box(g,65,35,2,2,outline);box(g,60,41,7,1,dark);box(g,44,36,5,2,light);
+      poly(g,[[35,47],[43,47],[47,55],[42,57],[38,52],[33,53]],dark);box(g,39,48,5,5,base);box(g,43,54,3,2,belly);
+      box(g,32,40,3,3,light);box(g,30,47,3,3,light);box(g,28,54,3,3,dark);
+      if(type==="火"){poly(g,[[6,51],[1,44],[4,37],[3,30],[10,37],[13,43],[10,49]],"#ed692d");poly(g,[[6,48],[4,43],[7,38],[10,44]],"#ffe986")}
+      if(type==="冰"){poly(g,[[24,37],[23,26],[30,34]],"#d6f8ff");poly(g,[[28,42],[29,32],[34,39]],"#edfaff")}
+      if(type==="草"){poly(g,[[43,21],[35,14],[44,14],[49,18]],"#aed463");box(g,32,38,6,3,"#c6db74")}
+      if(type==="雷"){poly(g,[[29,39],[24,29],[29,30],[27,23],[36,35],[31,34]],"#fff4a1")}
+      if(form>0){poly(g,[[17,28],[9,7],[22,18]],light);poly(g,[[47,14],[49,2],[55,12]],belly)}
+      if(form>1){poly(g,[[27,48],[18,38],[27,36]],belly);poly(g,[[34,35],[29,23],[39,28]],belly);box(g,51,18,6,3,"#fff4ae")}
+      dragonSprites.set(key,c);return c;
+    }
+    function drawDragon(g,x,y,type,size=48,form=0,flip=false){
+      g.save();g.translate(Math.round(x),Math.round(y));if(flip){g.translate(size,0);g.scale(-1,1)}
+      g.drawImage(dragonSprite(type,form),0,0,size,size);g.restore();
+    }
+    function spriteMarkup(type,form=0,cls="dragon-art"){return '<img class="'+cls+'" alt="'+TYPES[type].names[form]+'" src="'+dragonSprite(type,form).toDataURL()+'">'}
+    function humanSprite(g,x,y,kind="player",scale=1){
+      g.save();g.translate(Math.round(x),Math.round(y));g.scale(scale,scale);
+      box(g,2,26,19,3,"#203b3644");box(g,4,21,6,7,"#293642");box(g,14,21,6,7,"#293642");
+      box(g,3,24,7,3,"#483d38");box(g,14,24,7,3,"#483d38");
+      const shirt=kind==="doctor"?"#e9f2e9":kind==="champion"?"#845460":state.gender==="女"?"#b7586e":"#bf5345";
+      box(g,3,12,18,11,"#303637");box(g,5,12,14,11,shirt);box(g,1,14,4,8,shirt);box(g,19,14,4,8,shirt);
+      box(g,1,20,4,3,"#e6b28c");box(g,19,20,4,3,"#e6b28c");box(g,6,5,12,10,"#eabf91");
+      box(g,4,2,16,6,kind==="doctor"?"#e2e4e5":"#48382e");box(g,6,0,12,3,kind==="doctor"?"#fbfaf0":"#604837");
+      box(g,4,6,3,5,kind==="doctor"?"#e2e4e5":"#48382e");box(g,17,5,3,5,kind==="doctor"?"#e2e4e5":"#48382e");
+      box(g,8,8,2,2,"#30363d");box(g,15,8,2,2,"#30363d");box(g,11,12,3,1,"#ba7e69");
+      if(kind==="doctor"){box(g,6,7,5,4,"#354751");box(g,13,7,5,4,"#354751");box(g,7,8,3,2,"#bde0e4");box(g,14,8,3,2,"#bde0e4");box(g,11,8,2,1,"#354751");box(g,11,15,3,7,"#647f6d")}
+      if(kind==="player"&&state.gender==="女"){box(g,2,6,3,9,"#48382e");box(g,19,6,3,9,"#48382e");box(g,18,5,4,2,"#efc36c")}
+      if(kind==="champion"){box(g,5,0,15,3,"#ebc975");box(g,5,-3,3,4,"#ebc975");box(g,11,-4,3,4,"#ebc975");box(g,17,-3,3,4,"#ebc975")}
+      g.restore();
+    }
+    const treeSprites=[];
+    function treeSprite(variant=0){
+      if(treeSprites[variant])return treeSprites[variant];
+      const c=surface(64,90),g=c.getContext("2d");box(g,26,57,13,28,"#544638");box(g,29,57,5,26,"#9b7950");box(g,22,83,23,4,"#4c614344");
+      const colors=variant?["#245c43","#2d7851","#4c9460","#75af65"]:["#214f3d","#306947","#4c8650","#79a45c"];
+      for(let layer=0;layer<4;layer++){const y=6+layer*12,w=18+layer*9;poly(g,[[32,y-5],[32-w/2,y+2],[32-w,y+23],[32-w+6,y+29],[32,y+32],[32+w-3,y+27],[32+w,y+21],[32+w/2,y+2]],colors[0]);poly(g,[[32,y-3],[32-w/2+3,y+4],[32-w+5,y+20],[32,y+24],[32+w-7,y+19],[32+w/2-3,y+4]],colors[1]);poly(g,[[30,y],[32-w/2+4,y+8],[32-w+10,y+16],[32,y+14],[40,y+9]],colors[2]);box(g,28,y+6,5,3,colors[3])}
+      if(!variant){
+        g.clearRect(0,0,64,70);
+        poly(g,[[25,3],[41,4],[50,13],[58,24],[62,37],[58,52],[48,62],[30,69],[12,63],[4,50],[1,34],[8,18]],"#254e3d");
+        const clumps=[[22,22,17],[39,22,17],[15,39,13],[33,38,20],[48,42,12],[29,54,13]];
+        clumps.forEach(([cx,cy,r],i)=>{
+          for(let y=-r;y<=r;y+=3){const span=Math.floor(Math.sqrt(r*r-y*y)/3)*3;box(g,cx-span,cy+y,span*2,3,["#527f4b","#5a8e50","#3d7648"][i%3])}
+          for(let n=0;n<12;n++){const x=cx-r/2+noise(n,i)*r,y=cy-r/2+noise(i,n)*r;box(g,x,y,3+noise(n+1,i)*3,3,n%3?"#679c57":"#88b16c")}
+        });
+        box(g,31,63,3,14,"#ac8557");
+      }
+      treeSprites[variant]=c;return c;
+    }
+    const riverX=y=>735+Math.sin(y/260)*70,bridgeRows=[560,1104];
+    const roads=[[[344,390],[344,560],[1472,560],[1472,850],[1744,850]],[[1472,560],[1892,560],[1892,334]],[[344,560],[344,1104],[1648,1104],[1648,1280]],[[1472,560],[1472,1104]]];
+    function distanceToSegment(x,y,a,b){const dx=b[0]-a[0],dy=b[1]-a[1],t=Math.max(0,Math.min(1,((x-a[0])*dx+(y-a[1])*dy)/(dx*dx+dy*dy)));return Math.hypot(x-a[0]-t*dx,y-a[1]-t*dy)}
+    function onRoad(x,y,pad=40){return roads.some(path=>path.slice(1).some((b,i)=>distanceToSegment(x,y,path[i],b)<pad))}
+    const scenery=[];
+    function buildScenery(){
+      for(let y=48;y<1400;y+=66)for(let x=40;x<2270;x+=64){
+        const px=x+Math.floor(noise(x,y)*35),py=y+Math.floor(noise(y,x)*30);
+        if(noise(x+9,y)>.63||onRoad(px,py,74)||Math.abs(px-riverX(py))<94)continue;
+        if(px>215&&px<470&&py>150&&py<462||px>1770&&px<2030&&py>140&&py<380||px>1620&&px<1860&&py>648&&py<900)continue;
+        if(wilds.some(w=>Math.hypot(px-w.x,py-w.y)<65))continue;
+        scenery.push({x:px-32,y:py-76,w:64,h:90,kind:"tree",variant:noise(px,py)>.5?1:0});
+      }
+      [[100,720],[548,815],[1230,1020],[2050,800],[1500,120],[2200,1250]].forEach(([x,y])=>scenery.push({x,y,w:34,h:24,kind:"rock"}));
+    }
+    let chestLocations=[];
+    function safeChestLocation(x,y){
+      const area={x,y,w:32,h:28};
+      if(x<32||y<32||x+32>maps.forest.w-32||y+28>maps.forest.h-32)return false;
+      // Exclude complete silhouettes, not just the small foot-level collision shapes.
+      const buildings=[{x:246,y:213,w:195,h:190},{x:1785,y:160,w:225,h:190},{x:1615,y:690,w:230,h:153}];
+      if(buildings.some(b=>rectHit(area,b,24))||scenery.some(o=>rectHit(area,o,8)))return false;
+      if([maps.forest.lab,maps.forest.arena,maps.forest.cave].some(p=>rectHit(area,p,64)))return false;
+      if(wilds.some(w=>Math.hypot(x+16-w.x,y+14-w.y)<76))return false;
+      for(let row=0;row<=28;row+=7){const bank=riverX(y+row);if(x+32>bank-70&&x<bank+70)return false}
+      return canStand(x,y,"forest");
+    }
+    function buildChestLocations(){
+      chestLocations=[];
+      const cols=maps.forest.w/TILE,rows=maps.forest.h/TILE,visited=new Uint8Array(cols*rows);
+      const queue=[26*cols+21];visited[queue[0]]=1;
+      // Flood-fill from the cabin exit with swept movement checks, proving each candidate is reachable.
+      for(let head=0;head<queue.length;head++){
+        const id=queue[head],gx=id%cols,gy=Math.floor(id/cols),x=gx*TILE,y=gy*TILE;
+        if(safeChestLocation(x,y))chestLocations.push({x,y});
+        for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+          const nx=gx+dx,ny=gy+dy;
+          if(nx<1||ny<1||nx>=cols-2||ny>=rows-2)continue;
+          const next=ny*cols+nx;if(visited[next])continue;
+          let pass=true;
+          for(let step=1;step<=4;step++){
+            const px=x+dx*TILE*step/4,py=y+dy*TILE*step/4;
+            if(!canStand(px,py,"forest")||[maps.forest.lab,maps.forest.arena].some(portal=>rectHit({x:px,y:py,w:20,h:28},portal))){pass=false;break}
+          }
+          if(pass){visited[next]=1;queue.push(next)}
+        }
+      }
+    }
+    function updateWorldRewards(now=Date.now()){
+      const chest=state.randomChest;
+      if(chest.active||now<chest.nextSpawnAt||!chestLocations.length)return;
+      const candidates=chest.lastPosition?chestLocations.filter(p=>Math.hypot(p.x-chest.lastPosition.x,p.y-chest.lastPosition.y)>64):chestLocations;
+      if(!candidates.length)return;
+      chest.position={...candidates[Math.floor(Math.random()*candidates.length)]};chest.active=true;
+      save(false);
+    }
+    function label(g,text,x,y){
+      g.font="bold 12px system-ui";const w=g.measureText(text).width+18;
+      box(g,x-w/2-1,y-1,w+2,24,"#e4dfc6");box(g,x-w/2,y,w,22,"#303d48");g.fillStyle="#fff7e4";g.textAlign="center";g.fillText(text,x,y+15);g.textAlign="left";
+    }
+    function drawCabin(g){
+      const x=255,y=233;
+      box(g,x+1,y+150,182,14,"#36513755");box(g,x+10,y+59,164,97,"#56432f");box(g,x+15,y+61,154,90,"#c5a36d");
+      for(let yy=70;yy<150;yy+=10){box(g,x+17,y+yy,150,2,"#9d794e");box(g,x+26,y+yy+3,132,1,"#dcc28d")}
+      box(g,x+14,y+60,9,91,"#765434");box(g,x+159,y+60,9,91,"#765434");
+      poly(g,[[x,y+66],[x+89,y-17],[x+180,y+66]],"#93643f");
+      poly(g,[[x-9,y+64],[x+89,y-17],[x+186,y+64],[x+175,y+76],[x+88,y+4],[x+2,y+77]],"#493b2e");
+      poly(g,[[x-4,y+59],[x+88,y-12],[x+180,y+59],[x+170,y+65],[x+88,y+6],[x+7,y+65]],"#aa7749");
+      for(let i=0;i<6;i++){const yy=y+7+i*10,half=(i+1)*13;box(g,x+88-half,yy,half*2,4,i%2?"#c39159":"#875d3d")}
+      box(g,x+127,y-18,18,34,"#797b69");box(g,x+124,y-20,24,7,"#a6a493");
+      box(g,x+67,y+91,46,66,"#6a5034");poly(g,[[x+66,y+101],[x+67,y+87],[x+88,y+75],[x+110,y+89],[x+113,y+101]],"#78603e");
+      box(g,x+74,y+98,30,59,"#4b3929");box(g,x+77,y+101,23,51,"#9b7447");box(g,x+96,y+127,3,4,"#e4c779");
+      for(const wx of [x+31,x+128]){box(g,wx,y+88,25,34,"#694b33");box(g,wx+3,y+91,19,26,"#78b0aa");box(g,wx+5,y+93,7,23,"#c9e5c8");box(g,wx+12,y+91,3,28,"#957649");box(g,wx,y+119,28,5,"#624735");box(g,wx+1,y+117,26,4,"#679052")}
+      box(g,x+64,y+155,51,8,"#b9a27a");box(g,x+59,y+163,61,5,"#776d52");
+      label(g,"博士的小屋",x+88,y+42);
+    }
+    function drawGate(g){
+      const x=1790,y=163;box(g,x-5,y+169,215,15,"#3b493b55");
+      box(g,x,y+12,64,149,"#676f70");box(g,x+142,y+12,64,149,"#676f70");box(g,x+35,y+39,132,68,"#767f7b");
+      for(let yy=20;yy<159;yy+=16)for(let xx=0;xx<207;xx+=28){if(xx>54&&xx<145&&yy>92)continue;box(g,x+xx+(yy%32?0:5),y+yy,24,13,noise(xx,yy)>.5?"#8d9690":"#7b837f");box(g,x+xx+1,y+yy,21,2,"#a4aaa0")}
+      poly(g,[[x+62,y+165],[x+62,y+102],[x+73,y+83],[x+93,y+70],[x+111,y+70],[x+134,y+84],[x+144,y+104],[x+144,y+165]],"#b7b6a1");
+      poly(g,[[x+75,y+166],[x+75,y+107],[x+84,y+93],[x+99,y+84],[x+112,y+89],[x+129,y+107],[x+129,y+166]],"#263432");
+      for(const xx of [x+17,x+162]){box(g,xx,y+31,25,62,"#993f43");box(g,xx+3,y+34,19,48,"#b55450");box(g,xx+10,y+44,5,25,"#e3ba66");box(g,xx+5,y+52,16,5,"#e3ba66");box(g,xx-4,y+26,34,5,"#584b3d")}
+      for(let xx=0;xx<206;xx+=27)box(g,x+xx,y,21,21,"#9ca297");
+      label(g,"竞技场大门",x+104,y+180);
+    }
+    function drawCave(g){
+      const x=1625,y=693;
+      poly(g,[[x-10,y+132],[x+8,y+57],[x+38,y+20],[x+97,y],[x+153,y+20],[x+202,y+82],[x+208,y+144]],"#59675e");
+      for(let i=0;i<40;i++){const px=x+noise(i,7)*192,py=y+25+noise(7,i)*115;box(g,px,py,17+noise(i,5)*20,12+noise(i,8)*13,["#778274","#8f9782","#646f62"][i%3])}
+      poly(g,[[x+74,y+145],[x+76,y+102],[x+87,y+75],[x+108,y+63],[x+132,y+74],[x+147,y+105],[x+148,y+145]],"#a6a68a");
+      poly(g,[[x+88,y+145],[x+89,y+104],[x+100,y+83],[x+116,y+80],[x+132,y+103],[x+134,y+145]],"#263335");
+      box(g,x+8,y+131,60,10,"#547d52");box(g,x+152,y+135,58,12,"#679651");label(g,"洞穴",x+116,y+166);
+    }
+    let forestGround=null,labGround=null,arenaGround=null,battleGround=null;
+    function buildForest(){
+      forestGround=surface(maps.forest.w,maps.forest.h);const g=forestGround.getContext("2d");
+      for(let y=0;y<maps.forest.h;y+=TILE)for(let x=0;x<maps.forest.w;x+=TILE){
+        const n=noise(x,y);box(g,x,y,TILE,TILE,["#78a862","#80ae66","#85b169","#7bab61"][Math.floor(n*4)]);
+        if(n>.48){box(g,x+3+n*8,y+3+noise(y,x)*8,2,4,"#a1c57a");box(g,x+6+n*7,y+8,3,2,"#6d9b57")}
+        if(n>.88){box(g,x+9,y+9,2,4,"#507e4e");box(g,x+7,y+8,5,2,n>.96?"#efc7c6":"#d8da91")}
+      }
+      roads.forEach(path=>{g.lineJoin="round";g.lineCap="round";g.beginPath();path.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));g.strokeStyle="#bca872";g.lineWidth=58;g.stroke();g.strokeStyle="#cfba83";g.lineWidth=48;g.stroke()});
+      for(let y=0;y<1440;y+=8){
+        const x=riverX(y);box(g,x-62,y,124,8,"#6a7354");box(g,x-57,y,114,8,"#a09c71");box(g,x-49,y,98,8,"#366f91");box(g,x-43,y,86,8,"#418eaa");box(g,x-33,y,65,8,"#4a9dbc");
+        if(y%24===0){box(g,x-22,y+3,23,2,"#9bccce");box(g,x+14,y+1,18,2,"#70b3c7")}
+      }
+      for(const y of bridgeRows){const x=riverX(y)-84;box(g,x-2,y-34,172,68,"#554936");box(g,x,y-28,168,56,"#a97d4d");for(let dx=0;dx<168;dx+=12){box(g,x+dx,y-27,2,54,"#614b34");box(g,x+dx+3,y-25,7,49,"#c09359")}box(g,x-4,y-35,176,6,"#503e2d");box(g,x-4,y+30,176,6,"#503e2d");for(let dx=0;dx<=168;dx+=42){box(g,x+dx-3,y-43,7,16,"#765434");box(g,x+dx-3,y+23,7,19,"#765434")}}
+      drawCabin(g);drawGate(g);drawCave(g);
+    }
+    function books(g,x,y){
+      box(g,x,y,102,57,"#554334");box(g,x+4,y+4,94,49,"#765e43");
+      for(let row=0;row<2;row++){for(let i=0;i<12;i++){const h=13+(i*3)%9;box(g,x+7+i*7,y+24+row*25-h,5,h,["#527e7d","#af7651","#b7ab6d","#786080"][i%4]);box(g,x+8+i*7,y+25+row*25-h,2,h-2,"#ffffff22")}box(g,x+3,y+24+row*25,96,4,"#b58b58")}
+    }
+    function plant(g,x,y){box(g,x+4,y+20,20,15,"#ad7650");box(g,x+2,y+17,24,6,"#d4a472");box(g,x+13,y+1,3,21,"#547649");poly(g,[[x+14,y+17],[x,y+6],[x+8,y+2],[x+16,y+9],[x+23,y],[x+31,y+7],[x+18,y+20]],"#578958");box(g,x+9,y+5,4,6,"#8fb665")}
+    function buildLab(){
+      labGround=surface(768,480);const g=labGround.getContext("2d");
+      box(g,0,0,768,480,"#6b4f3c");
+      for(let y=56;y<456;y+=16)for(let x=24;x<744;x+=48){box(g,x,y,47,15,["#b49b73","#bba47d","#c5ad84"][Math.floor(noise(x,y)*3)]);box(g,x+4,y+12,34,1,"#a48a63")}
+      box(g,0,0,768,96,"#9a7650");
+      for(let y=0;y<96;y+=16){box(g,0,y,768,3,"#70543a");box(g,8,y+3,752,2,"#b38d5e")}
+      for(const x of [35,262,494,717]){box(g,x,0,16,449,"#765238");box(g,x+3,0,5,449,"#a47b4e")}
+      for(const x of [102,572]){box(g,x,25,82,68,"#574534");box(g,x+6,30,70,55,"#e7dab0");box(g,x+11,34,60,47,"#90c9c1");box(g,x+15,37,23,41,"#c8e4d2");box(g,x+38,31,5,53,"#ab844f");box(g,x+6,56,70,5,"#ab844f");box(g,x-5,86,92,8,"#6e5036")}
+      books(g,89,107);books(g,555,87);books(g,557,222);
+      box(g,253,239,253,160,"#99775c");box(g,258,244,243,150,"#bd8366");box(g,266,252,227,134,"#ddc6a0");box(g,273,259,213,120,"#b57860");
+      for(let x=280;x<488;x+=24){box(g,x,263,8,4,"#d7b58a");box(g,x,371,8,4,"#d7b58a")}
+      box(g,315,221,141,42,"#59452e");box(g,318,216,135,40,"#a9804f");box(g,322,213,127,13,"#ccaa71");box(g,325,264,9,15,"#6c4d33");box(g,438,264,9,15,"#6c4d33");
+      box(g,408,211,25,5,"#f2e7c6");box(g,409,207,22,5,"#bcad7e");box(g,420,202,8,5,"#d4af57");
+      box(g,164,188,79,38,"#745a41");box(g,160,182,87,11,"#cca773");drawEgg(g,187,157,"冰",1,0);
+      box(g,551,183,76,32,"#836243");box(g,548,178,83,9,"#c5a16e");box(g,563,165,9,12,"#80aaa0");box(g,581,169,12,8,"#c7a560");
+      box(g,566,315,74,59,"#778b5e");box(g,571,320,64,47,"#b2c184");drawDragon(g,586,324,"草",34);
+      plant(g,69,338);plant(g,660,318);plant(g,443,143);
+      box(g,352,427,64,43,"#4c3b2b");box(g,358,434,52,42,"#bf9c62");box(g,348,469,72,6,"#e2c48d");
+      label(g,"孵蛋",202,232);label(g,"商店",587,223);label(g,"龙园",603,380);
+    }
+    function buildArena(){
+      arenaGround=surface(768,480);const g=arenaGround.getContext("2d");
+      for(let y=0;y<480;y+=16)for(let x=0;x<768;x+=32){box(g,x,y,31,15,["#adb3a1","#b6baa6","#a3aa99"][Math.floor(noise(x,y)*3)])}
+      box(g,0,0,768,74,"#52645e");box(g,0,60,768,12,"#839081");box(g,361,168,46,312,"#a45251");
+      for(const x of [35,691]){box(g,x,80,42,292,"#6b7970");box(g,x-6,79,54,14,"#c6c8b0");box(g,x+8,97,10,262,"#a6b19c");box(g,x-5,366,52,13,"#bdc5b0")}
+      for(const x of [145,573]){box(g,x,24,46,93,"#a45050");box(g,x+5,28,36,71,"#ba655b");box(g,x+20,38,7,47,"#e6c779");box(g,x+10,54,26,8,"#e6c779")}
+      g.strokeStyle="#788a78";g.lineWidth=6;g.beginPath();g.ellipse(384,297,151,108,0,0,Math.PI*2);g.stroke();
+      box(g,319,99,130,73,"#848d76");box(g,327,98,114,59,"#b6bca0");box(g,352,427,64,49,"#554b38");
+    }
+    function drawEgg(g,x,y,type,scale=1,cracked=false){
+      g.save();g.translate(x,y);g.scale(scale,scale);
+      poly(g,[[4,25],[1,19],[3,10],[8,2],[12,0],[17,3],[22,13],[23,22],[18,28],[8,29]],"#485359");
+      poly(g,[[6,24],[4,19],[6,10],[10,3],[13,3],[18,9],[20,18],[19,23],[15,26],[8,26]],"#f0f2df");
+      box(g,8,8,4,5,TYPES[type].color);box(g,15,16,4,5,TYPES[type].color);box(g,6,19,3,3,TYPES[type].color);
+      if(cracked)poly(g,[[3,15],[10,13],[8,17],[15,18],[12,22],[19,20],[15,24],[13,20],[5,19],[8,15]],"#465268");
+      g.restore();
+    }
+    function buildBattleGround(){
+      battleGround=surface(768,330);const g=battleGround.getContext("2d");
+      box(g,0,0,768,330,"#92bbaa");box(g,0,134,768,196,"#75a066");
+      for(let i=0;i<23;i++){g.globalAlpha=.4;g.drawImage(treeSprite(i%2),i*39-28,-38,100,180);g.globalAlpha=1}
+      for(let i=0;i<11;i++)g.drawImage(treeSprite(i%2),i*78-32,-44,126,195);
+      for(let y=155;y<330;y+=8)for(let x=0;x<768;x+=16){const n=noise(x,y);box(g,x,y,16,8,n>.6?"#8eaf70":"#84a866");if(n>.75)box(g,x+5,y,3,3,"#bdd493")}
+      poly(g,[[0,294],[250,250],[510,254],[768,285],[768,330],[0,330]],"#b7b180");
+      label(g,"龙栖谷",384,20);
+    }
+    function renderBattleScene(){
+      const c=$("#battleStage");if(!c||!battle)return;
+      const compact=window.innerWidth<600;c.height=compact?440:330;
+      const g=c.getContext("2d");g.imageSmoothingEnabled=false;g.clearRect(0,0,c.width,c.height);
+      g.drawImage(battleGround,0,0,c.width,c.height);const p=state.team[battle.active],e=battle.enemy;
+      box(g,111,compact?400:291,181,9,"#334a3a44");box(g,491,compact?366:246,140,7,"#334a3a44");
+      drawDragon(g,64,compact?190:82,p.type,248,p.form);drawDragon(g,455,compact?196:76,e.type,207,e.form,true);
+    }
+    function drawLab(){ctx.drawImage(labGround,0,0);humanSprite(ctx,372,185,"doctor",1.4)}
+    function drawArena(){ctx.drawImage(arenaGround,0,0);humanSprite(ctx,372,127,"champion",1.4)}
+    function drawForest(){
+      ctx.drawImage(forestGround,0,0);
+      const treasure=chestRect();
+      if(treasure){const {x,y}=treasure;box(ctx,x+1,y+7,30,20,"#664832");box(ctx,x+2,y+1,28,13,"#b48a4e");box(ctx,x+6,y+2,3,24,"#e3c478");box(ctx,x+23,y+2,3,24,"#e3c478");box(ctx,x+14,y+11,6,6,"#e7cc7d")}
+      const actors=scenery.filter(o=>o.x+o.w>camera.x-8&&o.x<camera.x+768&&o.y+o.h>camera.y&&o.y<camera.y+480).map(o=>({y:o.y+o.h,draw:()=>{if(o.kind==="tree")ctx.drawImage(treeSprite(o.variant),o.x,o.y);else{poly(ctx,[[o.x,o.y+20],[o.x+5,o.y+5],[o.x+24,o.y],[o.x+34,o.y+17],[o.x+30,o.y+24]],"#69776c");box(ctx,o.x+8,o.y+6,16,5,"#a5ad93")}}}));
+      wilds.filter(w=>w.active).forEach(w=>actors.push({y:w.y+32,draw:()=>drawDragon(ctx,w.x-14,w.y-14,w.type,52)}));
+      if(state.team.length)actors.push({y:follower.y+22,draw:()=>drawDragon(ctx,follower.x-12,follower.y-20,state.team[0].type,50,state.team[0].form,facing<0)});
+      actors.push({y:state.y+28,draw:()=>drawPlayer()});actors.sort((a,b)=>a.y-b.y).forEach(a=>a.draw());
+      label(ctx,"森林深处 →",1450,635);label(ctx,"← 博士的小屋",485,615);label(ctx,"↑ 竞技场",1920,595);
+    }
+    function drawPlayer(){humanSprite(ctx,state.x,state.y)}
+    function updateCamera(){const m=maps[state.map];camera.x=Math.round(Math.max(0,Math.min(m.w-768,state.x+12-384)));camera.y=Math.round(Math.max(0,Math.min(m.h-480,state.y+14-240)))}
+    function drawHatch(){
+      if(!$("#hatchStage")||$("#hatchStage").hidden)return;
+      const g=$("#hatchArt").getContext("2d");g.clearRect(0,0,210,200);g.imageSmoothingEnabled=false;
+      const elapsed=performance.now()-hatchStart,type=state.starterType;
+      if(!TYPES[type])return;
+      if(state.intro==="done"){drawDragon(g,23,6,type,164);return}
+      const shaking=elapsed>450&&elapsed<1650;
+      g.save();g.translate(105,100);g.rotate(shaking?Math.sin(elapsed/65)*.12:0);drawEgg(g,-36,-48,type,3,elapsed>1550);g.restore();
+      if(elapsed>1800){g.fillStyle="rgba(255,250,215,"+Math.max(0,1-(elapsed-1800)/650)+")";g.fillRect(0,0,210,200)}
+      $("#hatchMessage").textContent=elapsed<500?"博士把龙蛋放进了温暖的孵化台。":elapsed<1600?"龙蛋轻轻摇晃……":elapsed<2200?"蛋壳裂开了！":"小龙正在探出头……";
+    }
+    function draw(){
+      ctx.clearRect(0,0,768,480);updateCamera();ctx.save();ctx.translate(-camera.x,-camera.y);
+      if(state.map==="lab")drawLab();else if(state.map==="forest")drawForest();else drawArena();
+      if(state.map!=="forest"){if(state.team.length)drawDragon(ctx,follower.x-12,follower.y-20,state.team[0].type,50,state.team[0].form,facing<0);drawPlayer()}
+      ctx.restore();drawHatch();requestAnimationFrame(draw);
+    }
+    function canStand(x,y,mapName=state.map){
+      const m=maps[mapName];if(x<16||y<72&&mapName!=="forest"||y<16||x>m.w-36||y>m.h-38)return false;
+      if(mapName!=="forest")return true;
+      const px=x+12,py=y+25;
+      if(Math.abs(px-riverX(py))<57&&!bridgeRows.some(by=>Math.abs(py-by)<27))return false;
+      if(px>265&&px<429&&py>291&&py<387&&! (px>321&&px<367&&py>369))return false;
+      if(px>1790&&px<1996&&py>171&&py<326&&!(px>1862&&px<1920&&py>290))return false;
+      if(px>1630&&px<1830&&py>718&&py<830&&!(px>1708&&px<1775&&py>801))return false;
+      return !scenery.some(o=>o.kind==="tree"?px>o.x+25&&px<o.x+41&&py>o.y+70&&py<o.y+87:px>o.x&&px<o.x+o.w&&py>o.y+9&&py<o.y+o.h);
+    }
+    function updateNearby(){
+      const m=maps[state.map];let text="";
+      if(state.map==="forest"){
+        if(near(m.lab))text="博士的小屋 · 进入";else if(near(m.cave))text="洞穴 · 探索";else if(near(m.arena))text="竞技场大门 · 进入";else if(chestRect()&&near(chestRect()))text="宝箱 · 打开";else text=state.x<riverX(state.y)?"博士的小屋 ← · 河桥 →":"洞穴 ↓ · 竞技场 ↑";
+      }else if(state.map==="lab"){
+        if(near(m.doctor))text="博士 · 交谈";else if(near(m.hatch))text="孵蛋台 · 孵化";else if(near(m.shop))text="商店 · 购买";else if(near(m.park))text="龙园 · 队伍";else if(near(m.door))text="翡翠森林 · 出门";else text="博士的小屋";
+      }else text=near(m.champ)?"冠军 · 挑战":"冠军竞技场";
+      $("#hint").textContent=text;
+    }
+    function move(dt){
+      if(modalOpen)return;
+      let dx=(keys.right?1:0)-(keys.left?1:0),dy=(keys.down?1:0)-(keys.up?1:0);
+      if(!dx&&!dy){updateNearby();return}
+      if(dx)facing=dx;const len=Math.hypot(dx,dy),speed=150;
+      const nx=state.x+dx/len*speed*dt,ny=state.y+dy/len*speed*dt;
+      if(canStand(nx,state.y))state.x=nx;if(canStand(state.x,ny))state.y=ny;
+      const gap=Math.hypot(state.x-follower.x,state.y-follower.y);
+      if(gap>32){const amount=Math.min(gap-32,170*dt);follower.x+=(state.x-follower.x)/gap*amount;follower.y+=(state.y-follower.y)/gap*amount}
+      updateNearby();
+      const m=maps[state.map];
+      if(performance.now()>portalCooldown){
+        if(state.map==="lab"&&near(m.door,0))return setMap("forest",335,416);
+        if(state.map==="arena"&&near(m.exit,0))return setMap("forest",1882,358);
+        if(state.map==="forest"&&near(m.lab,0))return setMap("lab",374,386);
+        if(state.map==="forest"&&near(m.arena,0)){portalCooldown=performance.now()+1600;enterArena();return}
+      }
+      if(state.map==="forest"){
+        if(ignoredWild!==null){const previous=wilds.find(w=>w.id===ignoredWild);if(!previous||Math.hypot(state.x-previous.x,state.y-previous.y)>78)ignoredWild=null}
+        for(const w of wilds)if(w.active&&w.id!==ignoredWild&&Math.hypot(state.x-w.x,state.y-w.y)<43){encounter(w);break}
+      }
+    }
+    function loop(t){const dt=Math.min(.04,(t-last)/1000||0);last=t;updateWorldRewards();move(dt);requestAnimationFrame(loop)}
+    function initNew(gender){
+      if(!["男","女"].includes(gender))return;
+      state=fresh();state.gender=gender;state.intro="choose";hide("startOverlay");
+      save(false);renderUI();showStarter();
+    }
+    function showStarter(){
+      $("#starterSpeech").textContent="欢迎你！在开始驯龙之旅以前，先选择你的第一颗龙蛋吧！";
+      $("#hatchStage").hidden=true;$("#starterChoices").hidden=false;
+      $("#starterChoices").innerHTML=["火","水","冰"].map(type=>
+        '<button class="choice starter-choice" data-starter="'+type+'">'+spriteMarkup(type)+
+        '<strong>'+TYPES[type].names[0]+'</strong><small>'+type+'属性 · 选择这颗龙蛋</small></button>'
+      ).join("");
+      show("starterOverlay");paintDoctorPortrait();
+    }
+    function paintDoctorPortrait(){
+      const g=$("#doctorPortrait").getContext("2d");g.clearRect(0,0,70,84);humanSprite(g,1,1,"doctor",3);
+    }
+    function startHatching(){
+      $("#starterChoices").hidden=true;$("#hatchStage").hidden=false;$("#hatchContinue").hidden=true;
+      $("#starterSpeech").textContent="选好了！让我来帮你孵化这颗龙蛋。";
+      hatchStart=performance.now();show("starterOverlay");paintDoctorPortrait();
+      clearTimeout(hatchTimer);
+      hatchTimer=setTimeout(()=>{
+        if(state.intro!=="hatching"||!["火","水","冰"].includes(state.starterType))return;
+        const d=makeDragon(state.starterType);
+        state.team.push(d);state.intro="done";follower.x=state.x-34;follower.y=state.y+14;
+        log("博士孵化了"+dragonName(d)+"，它成为你的第一位伙伴");
+        $("#starterSpeech").textContent="它孵化了！以后它就是你的伙伴了。";
+        $("#hatchMessage").textContent=dragonName(d)+"成为了你的伙伴。";
+        $("#hatchContinue").hidden=false;save(false);
+      },2600);
+    }
+    function finishStarter(type){
+      if(state.intro!=="choose"||!["火","水","冰"].includes(type))return;
+      state.starterType=type;state.intro="hatching";save(false);startHatching();
+    }
+    document.addEventListener("keydown",e=>{const map={ArrowUp:"up",w:"up",W:"up",ArrowDown:"down",s:"down",S:"down",ArrowLeft:"left",a:"left",A:"left",ArrowRight:"right",d:"right",D:"right"};if(map[e.key]){keys[map[e.key]]=true;e.preventDefault()}if((e.key===" "||e.key==="Enter")&&!modalOpen){e.preventDefault();interact()}});document.addEventListener("keyup",e=>{const map={ArrowUp:"up",w:"up",W:"up",ArrowDown:"down",s:"down",S:"down",ArrowLeft:"left",a:"left",A:"left",ArrowRight:"right",d:"right",D:"right"};if(map[e.key])keys[map[e.key]]=false});
+    $$(".touch-btn").forEach(btn=>{const stop=e=>{e.preventDefault();keys[btn.dataset.dir]=false;btn.classList.remove("pressed")};btn.addEventListener("pointerdown",e=>{e.preventDefault();btn.setPointerCapture?.(e.pointerId);keys[btn.dataset.dir]=true;btn.classList.add("pressed")});btn.addEventListener("pointerup",stop);btn.addEventListener("pointercancel",stop);btn.addEventListener("lostpointercapture",stop);btn.addEventListener("contextmenu",e=>e.preventDefault())});$("#actionTouch").onclick=interact;
+    $$("[data-gender]").forEach(b=>b.onclick=()=>initNew(b.dataset.gender));$("#starterChoices").onclick=e=>{const b=e.target.closest("[data-starter]");if(b)finishStarter(b.dataset.starter)};
+    $("#encounterOverlay").onclick=e=>{const b=e.target.closest("[data-encounter]");if(!b)return;const a=b.dataset.encounter;if(a==="leave"){hide("encounterOverlay");activeWild=null}else if(a==="battle"){const d=activeWild.dragon;hide("encounterOverlay");startBattle(d)}else tame(a)};
+    $("#battleMenu").onclick=e=>{const b=e.target.closest("[data-battle]");if(!b||!battle||battle.busy)return;const a=b.dataset.battle;if(a==="moves"){$("#battleSubmenu").innerHTML=state.team[battle.active].moves.map((m,i)=>`<button class="pixel-btn move-btn" data-move="${i}">${m[0]}<br><small>威力 ${m[1]||"变化"}</small></button>`).join("")+`<button class="pixel-btn" data-back="1">返回</button>`}if(a==="switch")switchMenu();if(a==="bag")bagMenu();if(a==="run")runAway()};
+    $("#battleSubmenu").onclick=e=>{const b=e.target.closest("button");if(!b)return;if(b.dataset.move!==undefined)chooseMove(state.team[battle.active].moves[+b.dataset.move]);if(b.dataset.switch!==undefined)switchDragon(+b.dataset.switch);if(b.dataset.potion)usePotion();if(b.dataset.back)renderBattle()};
+    $("#serviceClose").onclick=()=>hide("serviceOverlay");$("#serviceBody").onclick=e=>{const buy=e.target.closest("[data-buy]"),svc=e.target.closest("[data-service]"),tr=e.target.closest("[data-transfer]");if(buy){const price=+buy.dataset.price;if(state.coins<price)return toast("金币不够");state.coins-=price;state.bag[buy.dataset.buy]++;shop();renderUI();save(false)}if(svc){if(svc.dataset.service==="heal"){[...state.team,...state.park].forEach(d=>d.hp=d.maxHp);log("博士治好了所有龙伙伴");doctor();save(false)}if(svc.dataset.service==="hatch"){if(!state.eggs.length)return toast("没有龙蛋");const d=makeDragon(state.eggs.shift());(state.team.length<3?state.team:state.park).push(d);log(`孵化出${dragonName(d)}`);doctor();save(false)}if(svc.dataset.service==="park")park()}if(tr){const id=+tr.dataset.transfer;if(tr.dataset.from==="team"){if(state.team.length<=1)return toast("队伍至少保留1条龙");const i=state.team.findIndex(d=>d.id===id);state.park.push(state.team.splice(i,1)[0])}else{if(state.team.length>=3)return toast("队伍最多3条龙");const i=state.park.findIndex(d=>d.id===id);state.team.push(state.park.splice(i,1)[0])}park();save(false)}};
+    $("#learnChoices").onclick=e=>{const b=e.target.closest("[data-replace]");if(!b)return;const d=[...state.team,...state.park].find(x=>x.id===Number($("#learnOverlay").dataset.dragon)),move=JSON.parse($("#learnOverlay").dataset.move);if(b.dataset.replace!=="no"){d.moves[+b.dataset.replace]=move;log(`${dragonName(d)}学会${move[0]}`)}hide("learnOverlay");save(false)};
+    $("#saveBtn").onclick=()=>save();$("#helpBtn").onclick=()=>show("helpOverlay");$$('[data-close]').forEach(b=>b.onclick=()=>hide(b.dataset.close));window.addEventListener("blur",()=>{keys={}});window.addEventListener("beforeunload",()=>save(false));
+    const battleCanvas=surface(768,330);battleCanvas.id="battleStage";
+    battleCanvas.setAttribute("aria-label","双方的龙在森林空地上对战");
+    $("#battleTitle").after(battleCanvas);
+    const newGameButton=document.createElement("button");newGameButton.className="pixel-btn new-game";newGameButton.textContent="新游戏";newGameButton.id="newGameBtn";
+    $("#saveBtn").parentElement.append(newGameButton);
+    newGameButton.onclick=()=>openService("开始新游戏","<p>开始新冒险将重新选择角色和龙蛋。当前玩家的已有存档会保留一份本地备份。</p><button class='pixel-btn primary' data-new-confirm='1'>备份并开始新游戏</button>");
+    $("#serviceBody").addEventListener("click",event=>{
+      if(!event.target.closest("[data-new-confirm]"))return;
+      try{localStorage.setItem(saveKey()+":backup",JSON.stringify(state))}catch(error){toast("无法备份存档，请稍后重试");return}
+      clearTimeout(hatchTimer);hide("serviceOverlay");state=fresh();save(false);spawnWilds();renderUI();
+      camera.x=0;camera.y=0;$("#mapLabel").textContent=maps.lab.name;show("startOverlay");
+    });
+    $("#hatchContinue").onclick=()=>{if(state.intro==="done"){hide("starterOverlay");renderUI()}};
+    window.addEventListener("resize",()=>{if(battle)renderBattleScene()});
+    document.addEventListener("visibilitychange",()=>{if(document.hidden){keys={};save(false)}else updateWorldRewards()});
+    load();spawnWilds();buildScenery();buildChestLocations();updateWorldRewards();buildForest();buildLab();buildArena();buildBattleGround();renderUI();
+    follower.x=state.x-34;follower.y=state.y+12;updateCamera();updateNearby();
+    $("#mapLabel").textContent=maps[state.map].name;
+    if(state.intro==="gender")show("startOverlay");
+    else if(state.intro==="choose")showStarter();
+    else if(state.intro==="hatching"){if(["火","水","冰"].includes(state.starterType))startHatching();else{state.intro="choose";showStarter()}}
+    draw();requestAnimationFrame(loop);
+  })();
+  </script>
+</body>
+</html>

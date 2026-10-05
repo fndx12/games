@@ -59,6 +59,31 @@
     .inventory-count{padding:12px;border-bottom:1px solid #b9b6a7}.rod-list{display:grid;gap:10px;margin-top:16px}.synthesis{text-align:center;animation:egg-flash 1.8s ease-out}.synthesis .egg{display:block;color:#769463}
     @keyframes egg-flash{0%,25%{background:#fffbe6;filter:brightness(1.9)}100%{filter:brightness(1)}}
     @media(max-width:600px){.map-bag{right:33px;bottom:116px}.fishing-bar{left:auto;right:10px;bottom:12px;transform:none;max-width:calc(100% - 164px);flex-wrap:wrap;font-size:11px;gap:4px;padding:5px}.fishing-bar button{min-height:44px;font-size:12px}.fishing-bar span{flex-basis:100%}}
+
+    /* Keep combat controls in the viewport; only the history scrolls. */
+    #battleOverlay{padding:12px}
+    #battleOverlay .dialog{height:min(700px,calc(100dvh - 24px));max-height:calc(100dvh - 24px);grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:minmax(120px,1fr) 88px 112px;gap:8px;padding:10px;overflow:hidden}
+    #battleStage{grid-column:1/-1;grid-row:1;width:100%;height:100%;min-height:0;aspect-ratio:auto;object-fit:contain}
+    #battleOverlay .battle-top{top:18px;left:20px;right:20px;gap:8px}
+    #battleOverlay .fighter{width:44%;padding:5px 8px}
+    #battleOverlay .battle-log{grid-column:1;grid-row:2;height:100%;min-height:0;padding:6px;font-size:13px}
+    #battleMenu{grid-column:2;grid-row:2;gap:6px}
+    #battleMenu .pixel-btn{min-height:0;padding:5px;font-size:15px;color:#fff;background:#425975}
+    #battleMenu .primary{background:#f1cf75;color:#17232d}
+    #battleSubmenu{grid-column:1/-1;grid-row:3;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:1fr;min-height:0;gap:6px}
+    #battleSubmenu .pixel-btn{min-height:0;margin:0;padding:5px 10px;background:#e1e5df;color:#17232d;font-size:14px;line-height:1.25;opacity:1}
+    #battleSubmenu .pixel-btn small{color:#263444;font-size:12px}
+    #battleSubmenu .pixel-btn:disabled{background:#bac3bf;color:#38443f;box-shadow:none}
+    @media(orientation:landscape) and (max-height:540px){
+      #battleOverlay .dialog{grid-template-columns:minmax(0,1.3fr) minmax(280px,1fr);grid-template-rows:70px minmax(0,1fr) 84px;gap:6px;padding:8px}
+      #battleStage{grid-column:1;grid-row:2/4}
+      #battleOverlay .battle-top{position:static;grid-column:1;grid-row:1;align-items:start}
+      #battleOverlay .fighter{width:49%;max-width:none}
+      #battleOverlay .fighter b{font-size:12px}
+      #battleOverlay .battle-log{grid-column:2;grid-row:1}
+      #battleSubmenu{grid-column:2;grid-row:2}
+      #battleMenu{grid-column:2;grid-row:3}
+    }
   </style>
 </head>
 <body>
@@ -71,7 +96,7 @@
         <div id="fishingBar" class="fishing-bar" hidden><span id="fishingStatus" aria-live="polite"></span><button id="reelBtn" class="pixel-btn" hidden>收竿</button><button id="cancelFishing" class="pixel-btn">取消</button></div>
         <div class="touch-controls" aria-label="触屏方向键"><button class="touch-btn up" data-dir="up" aria-label="向上">↑</button><button class="touch-btn left" data-dir="left" aria-label="向左">←</button><span class="touch-dot">●</span><button class="touch-btn right" data-dir="right" aria-label="向右">→</button><button class="touch-btn down" data-dir="down" aria-label="向下">↓</button></div><button id="actionTouch" class="action-touch" aria-label="互动">互动</button>
       </div>
-      <aside class="side"><section class="panel"><h2>当前队伍 <span id="teamCount"></span></h2><div id="teamList" class="team-list"></div></section><section class="panel"><h2>冒险进度</h2><div id="progress"></div><div class="mini-actions"><button id="saveBtn" class="pixel-btn">保存</button><button id="helpBtn" class="pixel-btn">玩法</button></div></section><section class="panel log-panel"><h2>旅途记录</h2><div id="worldLog" class="log"></div></section></aside>
+      <aside class="side"><section class="panel"><h2>当前队伍 <span id="teamCount"></span></h2><div id="teamList" class="team-list"></div></section><section class="panel"><h2>冒险进度</h2><div id="progress"></div><div class="mini-actions"><button id="exportBtn" class="pixel-btn">导出存档</button><button id="importBtn" class="pixel-btn">导入存档</button><input id="importFile" type="file" accept=".json,application/json" hidden></div></section><section class="panel log-panel"><h2>旅途记录</h2><div id="worldLog" class="log"></div></section></aside>
     </section>
   </main>
 
@@ -80,7 +105,7 @@
   <div id="startOverlay" class="overlay"><div class="dialog"><h2>欢迎来到龙栖谷</h2><p>先选择你的冒险者。外观不同，但能力完全相同。</p><div class="choices"><button class="choice gender-card" data-gender="男">🧑<strong>男孩</strong></button><button class="choice gender-card" data-gender="女">👧<strong>女孩</strong></button></div></div></div>
   <div id="starterOverlay" class="overlay" role="dialog" aria-label="选择第一颗龙蛋"><div class="dialog"><div class="doctor-dialogue"><canvas id="doctorPortrait" class="doctor-portrait" width="70" height="84"></canvas><div><h2>博士</h2><p id="starterSpeech">欢迎你！在开始驯龙之旅以前，先选择你的第一颗龙蛋吧！</p></div></div><div id="starterChoices" class="choices"></div><div id="hatchStage" hidden><canvas id="hatchArt" class="hatch-art" width="210" height="200"></canvas><p id="hatchMessage" class="hatch-message"></p><button id="hatchContinue" class="pixel-btn primary" hidden>带上伙伴，出发吧</button></div></div></div>
   <div id="encounterOverlay" class="overlay"><div class="dialog"><h2 id="encounterTitle">遇见野生龙</h2><div id="encounterInfo"></div><div class="dialog-actions"><button class="pixel-btn red" data-encounter="battle">对战</button><button class="pixel-btn green" data-encounter="normal">普通鱼驯服</button><button class="pixel-btn primary" data-encounter="rare">高级鱼驯服</button><button class="pixel-btn" data-encounter="leave">离开</button></div></div></div>
-  <div id="battleOverlay" class="overlay"><div class="dialog wide"><h2 id="battleTitle">龙对战</h2><div class="battle-top"><div id="playerFighter" class="fighter"></div><div id="enemyFighter" class="fighter enemy"></div></div><div id="battleLog" class="battle-log"></div><div id="battleMenu" class="battle-menu"><button class="pixel-btn primary" data-battle="moves">招式</button><button class="pixel-btn" data-battle="switch">换龙</button><button class="pixel-btn green" data-battle="bag">背包</button><button class="pixel-btn red" data-battle="run">逃跑</button></div><div id="battleSubmenu" class="move-menu"></div></div></div>
+  <div id="battleOverlay" class="overlay"><div class="dialog wide"><div class="battle-top"><div id="playerFighter" class="fighter"></div><div id="enemyFighter" class="fighter enemy"></div></div><div id="battleLog" class="battle-log"></div><div id="battleMenu" class="battle-menu"><button class="pixel-btn primary" data-battle="moves">招式</button><button class="pixel-btn" data-battle="switch">换龙</button><button class="pixel-btn green" data-battle="bag">背包</button><button class="pixel-btn red" data-battle="run">逃跑</button></div><div id="battleSubmenu" class="move-menu"></div></div></div>
   <div id="serviceOverlay" class="overlay"><div class="dialog wide"><h2 id="serviceTitle">博士研究所</h2><div id="serviceBody"></div><div class="dialog-actions"><button id="serviceClose" class="pixel-btn">关闭</button></div></div></div>
   <div id="learnOverlay" class="overlay"><div class="dialog"><h2>学会新招式</h2><p id="learnText"></p><div id="learnChoices" class="choices"></div></div></div>
   <div id="helpOverlay" class="overlay"><div class="dialog"><h2>冒险指南</h2><p><b>移动：</b>方向键或 WASD；手机和平板可使用屏幕方向键。靠近人物或设施按空格，也可点“互动”。</p><p><b>目标：</b>在森林驯龙、战斗升级、洞穴找蛋。拥有至少 2 条龙并赢得 3 场野外战斗后，竞技场会开放。</p><p><b>研究所：</b>博士可治疗、孵蛋和管理队伍；柜台可以买药和鱼。最多携带 3 条龙。</p><div class="dialog-actions"><button class="pixel-btn primary" data-close="helpOverlay">知道了</button></div></div></div>
@@ -132,6 +157,7 @@
         state.rods=Array.isArray(saved.rods)?saved.rods.filter(r=>r.durability>0):[];
         state.nextRodId=Math.max(saved.nextRodId||1,...state.rods.map(r=>Number(r.id)+1));
         state.thornQuest=Object.assign(freshQuest(),saved.thornQuest);
+        normalizeThornQuest(state);
         if(state.fishing&&!state.rods.some(r=>r.id===state.fishing.rodId))state.fishing=null;
         // Old one-off chests have no opening timestamp. Start their first respawn wait on migration.
         if(!saved.randomChest&&saved.chests?.includes("forest"))state.randomChest.nextSpawnAt=Date.now()+CHEST_RESPAWN_TIME;
@@ -146,6 +172,83 @@
         if(!saved.randomChest)save(false);
       }catch(error){}
     }
+
+    const SAVE_GAME_ID="fndx12-dragon-champion", SAVE_FILE_VERSION=1;
+    function normalizeThornQuest(data){
+      const ids=specialCacti.map(c=>c.id),q=data.thornQuest;
+      q.visited=[...new Set(Array.isArray(q.visited)?q.visited.filter(id=>ids.includes(id)):[])];
+      const earned=Math.min(3,Math.max(q.visited.length,Number(q.spines)||0));
+      for(const id of ids)if(q.visited.length<earned&&!q.visited.includes(id))q.visited.push(id);
+      if(q.completed||q.eggCreated||data.eggs.includes("thorn")||[...data.team,...data.park].some(d=>d.species==="thorn")){
+        q.completed=true;q.eggCreated=true;q.spines=0;q.visited=ids.slice();
+      }else if(q.visited.length===3){
+        q.completed=true;q.eggCreated=true;q.spines=0;data.eggs.push("thorn");
+      }else q.spines=q.visited.length;
+    }
+    function showMoves(){
+      $("#battleSubmenu").innerHTML=state.team[battle.active].moves.map((m,i)=>`<button class="pixel-btn move-btn" data-move="${i}" ${battle.busy?"disabled":""}>${m[0]}<br><small>威力 ${m[1]||"变化"}</small></button>`).join("");
+    }
+    function exportSave(){
+      const file={gameId:SAVE_GAME_ID,saveVersion:SAVE_FILE_VERSION,exportedAt:new Date().toISOString(),playerName,state:JSON.parse(JSON.stringify(state))};
+      const url=URL.createObjectURL(new Blob([JSON.stringify(file,null,2)],{type:"application/json"}));
+      const link=document.createElement("a");link.href=url;link.download=`驯龙冠军-${playerName}-${new Date().toISOString().slice(0,10)}.json`;
+      document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+    }
+    function validateSave(file){
+      const obj=v=>v!==null&&typeof v==="object"&&!Array.isArray(v);
+      const num=v=>typeof v==="number"&&Number.isFinite(v)&&v>=0;
+      const integer=v=>num(v)&&Number.isInteger(v);
+      const bool=v=>typeof v==="boolean";
+      const check=v=>{if(!v)throw Error("invalid save")};
+      check(obj(file)&&file.gameId===SAVE_GAME_ID&&file.saveVersion===SAVE_FILE_VERSION&&obj(file.state));
+      const d=file.state;
+      check(d.version===1&&maps[d.map]&&num(d.x)&&num(d.y)&&d.x<maps[d.map].w&&d.y<maps[d.map].h);
+      check([null,"男","女"].includes(d.gender)&&["gender","choose","hatching","done"].includes(d.intro));
+      check(d.starterType===null||["火","水","冰"].includes(d.starterType));
+      check(integer(d.coins)&&integer(d.wins)&&bool(d.champion)&&obj(d.bag));
+      check(["potion","fish","rareFish"].every(k=>integer(d.bag[k])));
+      check(Array.isArray(d.team)&&d.team.length<=3&&Array.isArray(d.park)&&Array.isArray(d.eggs));
+      check(d.eggs.every(t=>t==="thorn"||Object.hasOwn(TYPES,t)));
+      const ids=new Set();
+      for(const dragon of [...d.team,...d.park]){
+        check(obj(dragon)&&Object.hasOwn(TYPES,dragon.type)&&[null,undefined,"thorn"].includes(dragon.species));
+        check(num(dragon.id)&&!ids.has(dragon.id));ids.add(dragon.id);
+        check(["level","exp","form","hp","maxHp","atk","def","spd"].every(k=>integer(dragon[k])));
+        check(dragon.level>=1&&dragon.form<=2&&dragon.maxHp>0&&dragon.hp<=dragon.maxHp);
+        check(Array.isArray(dragon.moves)&&dragon.moves.length>=1&&dragon.moves.length<=4);
+        check(dragon.moves.every(m=>Array.isArray(m)&&dragonData(dragon).moves.some(known=>known[0]===m[0]&&known[1]===m[1])));
+      }
+      check(d.intro!=="done"||d.team.length>0);
+      check(Array.isArray(d.rods)&&integer(d.nextRodId));
+      const rodIds=new Set();for(const r of d.rods){check(obj(r)&&integer(r.id)&&integer(r.durability)&&r.durability<=FISHING.rodDurability&&!rodIds.has(r.id));rodIds.add(r.id)}
+      check(obj(d.caveReadyAt)&&Object.values(d.caveReadyAt).every(num));
+      check(obj(d.randomChest));const c=d.randomChest;
+      const point=p=>p===null||(obj(p)&&num(p.x)&&num(p.y));
+      check(bool(c.active)&&["forest","desert"].includes(c.map)&&point(c.position)&&point(c.lastPosition)&&num(c.lastOpenedAt)&&num(c.nextSpawnAt)&&(!c.active||c.position!==null));
+      check(obj(d.thornQuest));const q=d.thornQuest;
+      check(Array.isArray(q.visited)&&q.visited.every(id=>typeof id==="string")&&integer(q.spines)&&q.spines<=3&&bool(q.eggCreated)&&bool(q.completed));
+      check(Array.isArray(d.logs)&&d.logs.every(x=>typeof x==="string")&&Array.isArray(d.chests)&&d.chests.every(x=>typeof x==="string")&&integer(d.wildSeed));
+      check(d.fishing===null||(obj(d.fishing)&&rodIds.has(d.fishing.rodId)&&["forest","desert"].includes(d.fishing.map)&&["x","y","castAt","bubblesAt","biteAt","expiresAt"].every(k=>num(d.fishing[k]))));
+      check(d.logs.every(x=>!/[<>]/.test(x)));
+      // Validate on a detached copy. No current state or localStorage changes here.
+      const result=JSON.parse(JSON.stringify(d));normalizeThornQuest(result);return result;
+    }
+    let pendingImport=null;
+    async function importSave(event){
+      const input=event.target,file=input.files[0];input.value="";if(!file)return;
+      try{if(!/\.json$/i.test(file.name)||file.size>10*1024*1024)throw Error("invalid file");pendingImport=validateSave(JSON.parse(await file.text()));}
+      catch(error){pendingImport=null;toast("存档文件无效，导入失败。");return}
+      openService("导入存档",'<p>导入存档将覆盖当前游戏进度，是否继续？</p><div class="dialog-actions"><button class="pixel-btn primary" id="confirmImport">确认导入</button><button class="pixel-btn" id="cancelImport">取消</button></div>');
+      $("#cancelImport").onclick=()=>{pendingImport=null;hide("serviceOverlay")};
+      $("#confirmImport").onclick=()=>{
+        if(!pendingImport)return;
+        try{localStorage.setItem(saveKey()+":backup",JSON.stringify(state));localStorage.setItem(saveKey(),JSON.stringify(pendingImport));}
+        catch(error){toast("无法写入存档，导入失败。");return}
+        state=pendingImport;pendingImport=null;clearTimeout(hatchTimer);
+        alert("存档导入成功！");location.reload();
+      };
+    }
+
     function makeDragon(type,level=1){const species=type==="thorn"?"thorn":null;if(species)type="草";const t=species?THORN:TYPES[type], [hp,atk,def,spd]=t.base, scale=level-1,form=level>=20?2:level>=10?1:0;const d={id:Date.now()+Math.random(),type,species,level,exp:0,form,maxHp:hp+scale*7,atk:atk+scale*2,def:def+scale*2,spd:spd+scale*2,hp:hp+scale*7,moves:[]};for(let i=0;i<LEARN.length;i++)if(level>=LEARN[i])d.moves.push(t.moves[i]);d.moves=d.moves.slice(-4);return d}
     const dragonName=d=>dragonData(d).names[d.form];
     function log(msg){state.logs.unshift(msg);state.logs=state.logs.slice(0,20);renderUI()}
@@ -359,7 +462,7 @@
       if(Math.random()<tameChance(battle.enemy,kind)){captureWild(battle.enemy);return}
       battleLog("驯服失败！野生龙准备反击。");renderBattle();enemyTurn();
     }
-    function startBattle(enemy,isChampion=false,ambush=false){if(!state.team.some(d=>d.hp>0)){toast("队伍需要先治疗");return}battle={enemy,isChampion,active:Math.max(0,state.team.findIndex(d=>d.hp>0)),participants:new Set(),enemyMods:{atk:0,def:0,spd:0},playerMods:{atk:0,def:0,spd:0},busy:ambush};battle.participants.add(state.team[battle.active].id);$("#battleTitle").textContent=isChampion?"最终冠军战":"野生龙对战";$("#battleLog").innerHTML="";show("battleOverlay");battleLog(`${dragonName(enemy)}出现了！`);renderBattle();if(ambush)setTimeout(()=>enemyTurn(true),450)}
+    function startBattle(enemy,isChampion=false,ambush=false){if(!state.team.some(d=>d.hp>0)){toast("队伍需要先治疗");return}battle={enemy,isChampion,active:Math.max(0,state.team.findIndex(d=>d.hp>0)),participants:new Set(),enemyMods:{atk:0,def:0,spd:0},playerMods:{atk:0,def:0,spd:0},busy:ambush};battle.participants.add(state.team[battle.active].id);$("#battleLog").innerHTML="";show("battleOverlay");battleLog(`${dragonName(enemy)}出现了！`);renderBattle();if(ambush)setTimeout(()=>enemyTurn(true),450)}
     function fighterHTML(d,enemy=false){
       return '<b>'+(enemy?"野生 ":"")+dragonName(d)+' · Lv.'+d.level+'</b><div class="hpbar"><div class="hpfill" style="width:'+Math.max(0,d.hp/d.maxHp*100)+'%"></div></div><small>HP '+d.hp+' / '+d.maxHp+'</small>';
     }
@@ -367,7 +470,7 @@
       if(!battle)return;
       $("#playerFighter").innerHTML=fighterHTML(state.team[battle.active]);
       $("#enemyFighter").innerHTML=fighterHTML(battle.enemy,!battle.isChampion);
-      $("#battleSubmenu").innerHTML="";$("#battleMenu").style.display="grid";
+      showMoves();$("#battleMenu").style.display="grid";
       $$("#battleMenu button").forEach(button=>button.disabled=battle.busy);
       renderBattleScene();
     }
@@ -521,7 +624,7 @@
       box(g,x+1,y+18,7,21,"#44755a");box(g,x+6,y+32,10,7,"#44755a");
       box(g,x+26,y+10,6,20,"#507f5d");box(g,x+22,y+24,7,6,"#507f5d");
       for(let i=0;i<4;i++){box(g,x+12,y+13+i*9,3,1,"#c8cd9b");box(g,x+24,y+17+i*8,2,1,"#d3d4a6")}
-      if(o.special||noise(x,y)>.86){box(g,x+15,y+1,7,4,"#ca8290");box(g,x+17,y,3,6,"#e7ac9d")}
+      if(o.special){box(g,x+15,y+1,7,4,"#ca8290");box(g,x+17,y,3,6,"#e7ac9d")}
     }
     function buildDesert(){
       desertGround=surface(maps.desert.w,maps.desert.h);const g=desertGround.getContext("2d");
@@ -545,7 +648,7 @@
     function collectSpine(cactus){
       if(state.map!=="desert"||!specialCacti.includes(cactus)||!near(cactus,26))return;
       const q=state.thornQuest;
-      if(q.completed||q.visited.includes(cactus.id))return toast("这棵仙人掌静静地立在沙地上。");
+      if(q.completed||q.visited.includes(cactus.id))return toast("这棵仙人掌已经检查过了。");
       q.visited.push(cactus.id);q.spines=q.visited.length;
       if(q.spines<3){save(false);return toast(q.spines===1?"你从仙人掌上发现了一根奇怪的刺……":"这根刺好像和之前找到的一样。")}
       // Commit the unique reward before displaying its animation.
@@ -843,7 +946,7 @@
     $$(".touch-btn").forEach(btn=>{const stop=e=>{e.preventDefault();keys[btn.dataset.dir]=false;btn.classList.remove("pressed")};btn.addEventListener("pointerdown",e=>{e.preventDefault();btn.setPointerCapture?.(e.pointerId);keys[btn.dataset.dir]=true;btn.classList.add("pressed")});btn.addEventListener("pointerup",stop);btn.addEventListener("pointercancel",stop);btn.addEventListener("lostpointercapture",stop);btn.addEventListener("contextmenu",e=>e.preventDefault())});$("#actionTouch").onclick=interact;
     $$("[data-gender]").forEach(b=>b.onclick=()=>initNew(b.dataset.gender));$("#starterChoices").onclick=e=>{const b=e.target.closest("[data-starter]");if(b)finishStarter(b.dataset.starter)};
     $("#encounterOverlay").onclick=e=>{const b=e.target.closest("[data-encounter]");if(!b)return;const a=b.dataset.encounter;if(a==="leave"){hide("encounterOverlay");activeWild=null}else if(a==="battle"){const d=activeWild.dragon;hide("encounterOverlay");startBattle(d)}else tame(a)};
-    $("#battleMenu").onclick=e=>{const b=e.target.closest("[data-battle]");if(!b||!battle||battle.busy)return;const a=b.dataset.battle;if(a==="moves"){$("#battleSubmenu").innerHTML=state.team[battle.active].moves.map((m,i)=>`<button class="pixel-btn move-btn" data-move="${i}">${m[0]}<br><small>威力 ${m[1]||"变化"}</small></button>`).join("")+`<button class="pixel-btn" data-back="1">返回</button>`}if(a==="switch")switchMenu();if(a==="bag")bagMenu();if(a==="run")runAway()};
+    $("#battleMenu").onclick=e=>{const b=e.target.closest("[data-battle]");if(!b||!battle||battle.busy)return;const a=b.dataset.battle;if(a==="moves")showMoves();if(a==="switch")switchMenu();if(a==="bag")bagMenu();if(a==="run")runAway()};
     $("#battleSubmenu").onclick=e=>{const b=e.target.closest("button");if(!b||b.disabled||!battle||battle.busy)return;if(b.dataset.move!==undefined)chooseMove(state.team[battle.active].moves[+b.dataset.move]);if(b.dataset.switch!==undefined)switchDragon(+b.dataset.switch);if(b.dataset.potion)usePotion();if(b.dataset.fish)useBattleFish(b.dataset.fish);if(b.dataset.back)renderBattle()};
     $("#serviceClose").onclick=()=>hide("serviceOverlay");$("#serviceBody").onclick=e=>{const buy=e.target.closest("[data-buy]"),svc=e.target.closest("[data-service]"),tr=e.target.closest("[data-transfer]");if(buy){buyItem(buy.dataset.buy)}if(svc){if(svc.dataset.service==="heal"){[...state.team,...state.park].forEach(d=>d.hp=d.maxHp);log("博士治好了所有龙伙伴");doctor();save(false)}if(svc.dataset.service==="hatch"){if(!state.eggs.length)return toast("没有龙蛋");const d=makeDragon(state.eggs.shift());(state.team.length<3?state.team:state.park).push(d);log(`孵化出${dragonName(d)}`);doctor();save(false)}if(svc.dataset.service==="park")park()}if(tr){const id=+tr.dataset.transfer;if(tr.dataset.from==="team"){if(state.team.length<=1)return toast("队伍至少保留1条龙");const i=state.team.findIndex(d=>d.id===id);state.park.push(state.team.splice(i,1)[0])}else{if(state.team.length>=3)return toast("队伍最多3条龙");const i=state.park.findIndex(d=>d.id===id);state.team.push(state.park.splice(i,1)[0])}park();save(false)}};
     $("#learnChoices").onclick=e=>{const b=e.target.closest("[data-replace]");if(!b)return;const d=[...state.team,...state.park].find(x=>x.id===Number($("#learnOverlay").dataset.dragon)),move=JSON.parse($("#learnOverlay").dataset.move);if(b.dataset.replace!=="no"){d.moves[+b.dataset.replace]=move;log(`${dragonName(d)}学会${move[0]}`)}hide("learnOverlay");save(false)};
@@ -863,12 +966,12 @@
       const rect=canvas.getBoundingClientRect();
       castFishing((e.clientX-rect.left)*canvas.width/rect.width+camera.x,(e.clientY-rect.top)*canvas.height/rect.height+camera.y);
     });
-    $("#saveBtn").onclick=()=>save();$("#helpBtn").onclick=()=>show("helpOverlay");$$('[data-close]').forEach(b=>b.onclick=()=>hide(b.dataset.close));window.addEventListener("blur",()=>{keys={}});window.addEventListener("beforeunload",()=>save(false));
+    $("#exportBtn").onclick=exportSave;$("#importBtn").onclick=()=>$("#importFile").click();$("#importFile").onchange=importSave;$$('[data-close]').forEach(b=>b.onclick=()=>hide(b.dataset.close));window.addEventListener("blur",()=>{keys={}});window.addEventListener("beforeunload",()=>save(false));
     const battleCanvas=surface(768,330);battleCanvas.id="battleStage";
     battleCanvas.setAttribute("aria-label","双方的龙在森林空地上对战");
-    $("#battleTitle").after(battleCanvas);
+    $("#battleOverlay .dialog").prepend(battleCanvas);
     const newGameButton=document.createElement("button");newGameButton.className="pixel-btn new-game";newGameButton.textContent="新游戏";newGameButton.id="newGameBtn";
-    $("#saveBtn").parentElement.append(newGameButton);
+    $("#exportBtn").parentElement.prepend(newGameButton);
     newGameButton.onclick=()=>openService("开始新游戏","<p>开始新冒险将重新选择角色和龙蛋。当前玩家的已有存档会保留一份本地备份。</p><button class='pixel-btn primary' data-new-confirm='1'>备份并开始新游戏</button>");
     $("#serviceBody").addEventListener("click",event=>{
       if(!event.target.closest("[data-new-confirm]"))return;
